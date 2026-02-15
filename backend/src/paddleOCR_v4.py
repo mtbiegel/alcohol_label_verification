@@ -136,32 +136,34 @@ def check_government_warning(text_list: list) -> bool:
     start_word = "GOVERNMENT"
     end_word = "PROBLEMS."
 
-    all_text = " ".join(text_list)
+    all_text = " ".join(text_list).upper()
     if ("GOVERNMENT WARNING" in all_text):
         gov_warning_exists = True
 
     if (gov_warning_exists):
         start = all_text.find(start_word)
-        stop = all_text.find(end_word)
-        gov_str = all_text[start:stop].upper()
-        
+        stop = all_text.find(end_word) + len(end_word)
+        gov_str = all_text[start:stop]
+
         print("\n-------------------")
         print(gov_str)
         print(GOV_WARNING_STR.upper())
         print("-------------------\n")
 
         # Need to use fuzzy to determine if it's close but not perfect (aka manual review)
-        partial_ratio = fuzz.partial_ratio(gov_str, GOV_WARNING_STR.upper())
-        print("PARTIAL RATIO:", partial_ratio)
+        if (gov_str == GOV_WARNING_STR.upper()):
+            matching_ratio = 100.0
+        else:
+            matching_ratio = fuzz.partial_ratio(gov_str, GOV_WARNING_STR.upper())
 
-        if (partial_ratio == 100):
-            print("EXACT MATCH")
+        if (matching_ratio == 100.0):
+            print("EXACT MATCH:", matching_ratio)
             return True
-        elif (partial_ratio >= 95):
-            print("PARTIAL MATCH - NEED MANUAL REVIEW:", partial_ratio)
+        elif (matching_ratio >= 95):
+            print("PARTIAL MATCH - NEED MANUAL REVIEW:", matching_ratio)
             return False
         else:
-            print("NOT EXACT MATCH, NOT EVEN PARTIAL:", partial_ratio)
+            print("NOT EXACT MATCH, NOT EVEN PARTIAL:", matching_ratio)
             return False
     else:
         print("NO WARNING FOUND")
@@ -173,7 +175,7 @@ def check_government_warning(text_list: list) -> bool:
 def process_image_ocr(img):
     return ocr.predict(img)
 
-def main(testing_file_name):
+def main(testing_file_name, image_type):
     
     has_brand_name = False
     has_class_type = False
@@ -182,7 +184,7 @@ def main(testing_file_name):
     has_location = False
 
     # Paths to applicaiton (JSON) and label (image)
-    image_path = "/home/biegemt1/projects/alcohol_label_verification/tests/test_images/" + testing_file_name + ".png"
+    image_path = "/home/biegemt1/projects/alcohol_label_verification/tests/test_images/" + testing_file_name + "." + image_type
     json_path = "/home/biegemt1/projects/alcohol_label_verification/tests/applications/" + testing_file_name + ".json"
     print(f"\nProcessing: {image_path}")
     print("=" * 60)
@@ -250,11 +252,11 @@ def main(testing_file_name):
         print("LABEL PASSES: All fields are present and valid")
     else:
         print("LABEL FAILS----------------------")
-        print("Brand Name Passes?", has_brand_name)
-        print("Class Type Passes?", has_class_type)
-        print("ABV Passes?", has_abv)
-        print("Net Contents Passes?", has_net_contents)
-        print("Gov Warning Passes?", has_valid_gov_warning)
+        print("Brand Name match?", has_brand_name)
+        print("Class Type match?", has_class_type)
+        print("ABV match?", has_abv)
+        print("Net Contents match?", has_net_contents)
+        print("Gov Warning match?", has_valid_gov_warning)
 
     total_stop_time = time.perf_counter()
 
@@ -274,8 +276,9 @@ if __name__ == "__main__":
         use_doc_unwarping=True
     )
 
-    test_file_name = "10"
-    main(test_file_name)
+    test_file_name = "7.png"
+    split_name = test_file_name.split(".")
+    main(split_name[0], split_name[1])
 
     # TODO: Need to determine if rotating & unwrapping are necessary (if not can run quicker model). Not a core requirement
         # Add option for longer, more accurate scanning in GUI and enable these options, but disable them by default. 
