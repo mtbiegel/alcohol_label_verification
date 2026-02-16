@@ -247,7 +247,7 @@ def run_all_tests(expected_results):
         test_counter += 1
 
     print("\nRESULTS:")
-    print("Number of FAILED TESTS =", failed_counter, " out of", len(expected_results))
+    print("Number of FAILED TESTS =", failed_counter, "out of", len(expected_results))
     print("Tests that failed:", failed_tests_list)
 
 def run_single_test(file_name, extension, expected_results):

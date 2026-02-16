@@ -15,7 +15,7 @@ To recreate this project with the same configuration:
 
 ```sh
 # recreate this project
-npx sv create --template minimal --no-types --add prettier tailwindcss="plugins:none" --install npm my-app
+npx sv create --template minimal --types ts --add prettier eslint tailwindcss="plugins:none" --install npm alcohol_verification_ui
 ```
 
 ## Developing
