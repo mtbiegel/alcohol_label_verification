@@ -3,6 +3,7 @@ import time
 import logging
 import re
 import cv2
+from cv2 import dnn_superres
 import numpy as np
 import json
 
@@ -145,10 +146,10 @@ def check_government_warning(text_list: list) -> bool:
         stop = all_text.find(end_word) + len(end_word)
         gov_str = all_text[start:stop]
 
-        print("\n-------------------")
-        print(gov_str)
-        print(GOV_WARNING_STR.upper())
-        print("-------------------\n")
+        # print("\n-------------------")
+        # print(gov_str)
+        # print(GOV_WARNING_STR.upper())
+        # print("-------------------\n")
 
         # Need to use fuzzy to determine if it's close but not perfect (aka manual review)
         if (gov_str == GOV_WARNING_STR.upper()):
@@ -157,20 +158,49 @@ def check_government_warning(text_list: list) -> bool:
             matching_ratio = fuzz.partial_ratio(gov_str, GOV_WARNING_STR.upper())
 
         if (matching_ratio == 100.0):
-            print("EXACT MATCH:", matching_ratio)
+            # print("GOV WARNING - EXACT MATCH:", matching_ratio)
             return True
         elif (matching_ratio >= 95):
-            print("PARTIAL MATCH - NEED MANUAL REVIEW:", matching_ratio)
+            # print("GOV WARNING - PARTIAL MATCH - NEED MANUAL REVIEW:", matching_ratio)
             return False
         else:
-            print("NOT EXACT MATCH, NOT EVEN PARTIAL:", matching_ratio)
+            # print("GOV WARNING - NOT EXACT MATCH, NOT EVEN PARTIAL:", matching_ratio)
             return False
     else:
-        print("NO WARNING FOUND")
+        # print("NO WARNING FOUND")
         return False
 
     
     return False
+
+def preprocess(img):
+    ### Scales up
+    # h, w = img.shape[:2]
+    # # Only upscale if image is smaller than 1200px on longest side
+    # if max(h, w) < 1200:
+    #     scale = 1200 / max(h, w)
+    #     img = cv2.resize(img, None, fx=scale, fy=scale, 
+    #                     interpolation=cv2.INTER_LANCZOS4)
+
+    # ### Contrast
+    # lab   = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    # l, a, b = cv2.split(lab)
+    # clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    # l     = clahe.apply(l)
+    # img   = cv2.cvtColor(cv2.merge([l, a, b]), cv2.COLOR_LAB2BGR)
+
+    # ### Sharpen
+    # kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+    # img = cv2.filter2D(img, -1, kernel)
+    # return img
+
+    sr = dnn_superres.DnnSuperResImpl_create()
+    sr.readModel("EDSR_x4.pb")
+    sr.setModel("edsr", 4)
+
+    result = sr.upsample(img)
+
+    return result
 
 def process_image_ocr(img):
     return ocr.predict(img)
@@ -184,7 +214,7 @@ def main(testing_file_name, image_type):
     has_location = False
 
     # Paths to applicaiton (JSON) and label (image)
-    image_path = "/home/biegemt1/projects/alcohol_label_verification/tests/test_images/" + testing_file_name + "." + image_type
+    image_path = "/home/biegemt1/projects/alcohol_label_verification/tests/test_images/" + testing_file_name + image_type
     json_path = "/home/biegemt1/projects/alcohol_label_verification/tests/applications/" + testing_file_name + ".json"
     print(f"\nProcessing: {image_path}")
     print("=" * 60)
@@ -194,6 +224,11 @@ def main(testing_file_name, image_type):
 
     # Load in label image
     img = cv2.imread(image_path)
+
+    # print("Running preprocessing...")
+    # img = preprocess(img)
+    # cv2.imwrite("upscaled.png", img)
+    # print("Finished preprocessing")
 
     start_time = time.perf_counter()
     # Run paddleOCR on label to get text
@@ -215,19 +250,17 @@ def main(testing_file_name, image_type):
     # TODO: Remove gov warning text for less possible errors???
     text_result_single_string = "".join(text_result_list).replace(" ", "").lower()
 
-    print("Ordered Output:", text_result_list)
-    print()
-
-    print("SINGLE STRING:", text_result_single_string)
-    print()
+    # print("Ordered Output:", text_result_list)
+    # print()
+    # print("SINGLE STRING:", text_result_single_string)
+    # print()
 
     application_data_modified = {}
     for item in application_data:
         application_data_modified[item] = application_data[item].replace(" ", "").lower()
 
-    print("application_data_modified:", application_data_modified)
-    print()
-
+    # print("application_data_modified:", application_data_modified)
+    # print()
     # print("----------------")
     # print(application_data)
     # print(application_data_modified)
@@ -247,26 +280,69 @@ def main(testing_file_name, image_type):
     if (application_data_modified["net_contents"] in text_result_single_string):
         has_net_contents = True
 
-    # Determine if label passes or fails
-    if (has_abv and has_brand_name and has_class_type and has_net_contents and has_valid_gov_warning):
-        print("LABEL PASSES: All fields are present and valid")
-    else:
-        print("LABEL FAILS----------------------")
-        print("Brand Name match?", has_brand_name)
-        print("Class Type match?", has_class_type)
-        print("ABV match?", has_abv)
-        print("Net Contents match?", has_net_contents)
-        print("Gov Warning match?", has_valid_gov_warning)
+    # # Determine if label passes or fails
+    # if (has_abv and has_brand_name and has_class_type and has_net_contents and has_valid_gov_warning):
+    #     print("LABEL PASSES: All fields are present and valid")
+    # else:
+    #     print("LABEL FAILS----------------------")
+    #     print("Brand Name match?", has_brand_name)
+    #     print("Class Type match?", has_class_type)
+    #     print("ABV match?", has_abv)
+    #     print("Net Contents match?", has_net_contents)
+    #     print("Gov Warning match?", has_valid_gov_warning)
+
+    return {"brand_name": [has_brand_name,],
+            "class_type": has_class_type,
+            "alcohol_content": has_abv,
+            "net_contents": has_net_contents,
+            "gov_warning": has_valid_gov_warning,
+    }
 
     total_stop_time = time.perf_counter()
 
     elapsed_time = stop_time - start_time
     total_time = total_stop_time - total_start_time
-    print("\nOCR time:", elapsed_time)
-    print("Total script time:", total_time)
+    # print("\nOCR time:", elapsed_time)
+    # print("Total script time:", total_time)
+
+def run_tests():
+    
+    expected_results = read_json_file("/home/biegemt1/projects/alcohol_label_verification/tests/expected_results.json")
+    for item in expected_results:
+        file_name = item
+        extension = expected_results[item]["image_type"]
+        single_result_dict = expected_results[item]["expected_values"]
+
+        results_dict = main(file_name, extension)
+
+        print("\nOUTPUT for", file_name,"-")
+        print(single_result_dict)
+        print(results_dict)
+        print()
+
+        if (single_result_dict == results_dict):
+            print("OUPTUT is EXPECTED; SUCCESS")
+        else:
+            print("------------------------INCORRECT OUTPUT - The following did not match------------------------")
+            if (single_result_dict["brand_name"] != results_dict["brand_name"]):
+                print("Brand Name:", single_result_dict["brand_name"], "!=", results_dict["brand_name"])
+
+            if (single_result_dict["class_type"] != results_dict["class_type"]):
+                print("Class Type match?", single_result_dict["class_type"], "!=", results_dict["class_type"])
+
+            if (single_result_dict["alcohol_content"] != results_dict["alcohol_content"]):
+                print("ABV match?", single_result_dict["alcohol_content"], "!=", results_dict["alcohol_content"])
+            
+            if (single_result_dict["net_contents"] != results_dict["net_contents"]):
+                print("Net Contents match?", single_result_dict["net_contents"], "!=", results_dict["net_contents"])
+            
+            if (single_result_dict["gov_warning"] != results_dict["gov_warning"]):
+                print("Gov Warning match?", single_result_dict["gov_warning"], "!=", results_dict["gov_warning"])
+
 
 
 if __name__ == "__main__":
+
     print("Loading PaddleOCR model...")
     ocr = PaddleOCR(
         lang='en',
@@ -276,12 +352,28 @@ if __name__ == "__main__":
         use_doc_unwarping=True
     )
 
-    test_file_name = "7.png"
-    split_name = test_file_name.split(".")
-    main(split_name[0], split_name[1])
+    run_tests()
+
+    # run_single_image()
+
+
+    # test_file_name = "1.png"
+    # split_name = test_file_name.split(".")
+    # main(split_name[0], split_name[1])
+
+
+
+
+
+
 
     # TODO: Need to determine if rotating & unwrapping are necessary (if not can run quicker model). Not a core requirement
+        # Need to calculate resolution and dpi of image to let user know if it will be more or less accurate (OCR isn't perfect)
         # Add option for longer, more accurate scanning in GUI and enable these options, but disable them by default. 
         # Automatically rerun ones that are labeled as partial matches with the more accurate model
     
+    # TODO: Document how this can be improved
+        # - Using a GPU
+        # - Using a local LLM trained specifically for text recognition
+
     # NOTE: Requirement to run this code is to have a processor that supports AVX512/AVX2 at least

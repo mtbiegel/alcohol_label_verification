@@ -1,0 +1,122 @@
+{
+    "1_chatgpt-upscale": {
+        "image_type": ".png",
+        "expected_values": {
+            "brand_name":true,
+            "class_type":true,
+            "alcohol_content":true,
+            "net_contents":true,
+            "gov_warning":true
+        }
+    },
+    "1": {
+        "image_type": ".png",
+        "expected_values": {
+            "brand_name":true,
+            "class_type":true,
+            "alcohol_content":true,
+            "net_contents":true,
+            "gov_warning":false
+        }
+    },
+    "2": {
+        "image_type": ".png",
+        "expected_values": {
+            "brand_name":true,
+            "class_type":true,
+            "alcohol_content":true,
+            "net_contents":true,
+            "gov_warning":false
+        }
+    },
+    "3": {
+        "image_type": ".png",
+        "expected_values": {
+            "brand_name":true,
+            "class_type":true,
+            "alcohol_content":true,
+            "net_contents":true,
+            "gov_warning":false
+        }
+    },
+    "4": {
+        "image_type": ".png",
+        "expected_values": {
+            "brand_name":true,
+            "class_type":false,
+            "alcohol_content":true,
+            "net_contents":true,
+            "gov_warning":false
+        }
+    },
+    "5": {
+        "image_type": ".png",
+        "expected_values": {
+            "brand_name":true,
+            "class_type":true,
+            "alcohol_content":true,
+            "net_contents":true,
+            "gov_warning":false
+        }
+    },
+    "6": {
+        "image_type": ".png",
+        "expected_values": {
+            "brand_name":true,
+            "class_type":true,
+            "alcohol_content":true,
+            "net_contents":true,
+            "gov_warning":false
+        }
+    },
+    "7": {
+        "image_type": ".png",
+        "expected_values": {
+            "brand_name":true,
+            "class_type":true,
+            "alcohol_content":true,
+            "net_contents":true,
+            "gov_warning":false
+        }
+    },
+    "8": {
+        "image_type": ".png",
+        "expected_values": {
+            "brand_name":true,
+            "class_type":true,
+            "alcohol_content":true,
+            "net_contents":true,
+            "gov_warning":true
+        }
+    },
+    "9": {
+        "image_type": ".png",
+        "expected_values": {
+            "brand_name":true,
+            "class_type":true,
+            "alcohol_content":true,
+            "net_contents":true,
+            "gov_warning":true
+        }
+    },
+    "10": {
+        "image_type": ".png",
+        "expected_values": {
+            "brand_name":true,
+            "class_type":true,
+            "alcohol_content":true,
+            "net_contents":true,
+            "gov_warning":false
+        }
+    },
+    "11": {
+        "image_type": ".webp",
+        "expected_values": {
+            "brand_name":true,
+            "class_type":true,
+            "alcohol_content":false,
+            "net_contents":true,
+            "gov_warning":true
+        }
+    }
+}
