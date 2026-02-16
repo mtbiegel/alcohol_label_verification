@@ -7,8 +7,6 @@ from cv2 import dnn_superres
 import numpy as np
 import json
 
-total_start_time = time.perf_counter()
-
 os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = "True"
 os.environ["FLAGS_use_mkldnn"] = "0"
 logging.disable(logging.WARNING)
@@ -128,16 +126,16 @@ def read_json_file(filename):
         print(f"Error: Failed to decode JSON from the file '{filename}'. Check the file's format.")
         return None
 
-def check_government_warning(text_list: list) -> bool:
+def check_government_warning(text_list: list) -> list:
      
     gov_warning_exists = False
     start = 0
     stop = 0
-
     start_word = "GOVERNMENT"
     end_word = "PROBLEMS."
 
     all_text = " ".join(text_list).upper()
+
     if ("GOVERNMENT WARNING" in all_text):
         gov_warning_exists = True
 
@@ -146,31 +144,26 @@ def check_government_warning(text_list: list) -> bool:
         stop = all_text.find(end_word) + len(end_word)
         gov_str = all_text[start:stop]
 
-        # print("\n-------------------")
-        # print(gov_str)
-        # print(GOV_WARNING_STR.upper())
-        # print("-------------------\n")
-
         # Need to use fuzzy to determine if it's close but not perfect (aka manual review)
         if (gov_str == GOV_WARNING_STR.upper()):
             matching_ratio = 100.0
         else:
             matching_ratio = fuzz.partial_ratio(gov_str, GOV_WARNING_STR.upper())
 
+        # Gov Warning is an exact match
         if (matching_ratio == 100.0):
-            # print("GOV WARNING - EXACT MATCH:", matching_ratio)
             return True
+        # Gov warning is a partial match
         elif (matching_ratio >= 95):
-            # print("GOV WARNING - PARTIAL MATCH - NEED MANUAL REVIEW:", matching_ratio)
             return False
+        # Gov warning is not even a partial match
         else:
-            # print("GOV WARNING - NOT EXACT MATCH, NOT EVEN PARTIAL:", matching_ratio)
             return False
+    # No warning label found
     else:
-        # print("NO WARNING FOUND")
         return False
 
-    
+    # If we get here, then something went wrong, so return False
     return False
 
 def preprocess(img):
@@ -205,7 +198,7 @@ def preprocess(img):
 def process_image_ocr(img):
     return ocr.predict(img)
 
-def main(testing_file_name, image_type):
+def run_detection(testing_file_name, image_type):
     
     has_brand_name = False
     has_class_type = False
@@ -216,8 +209,8 @@ def main(testing_file_name, image_type):
     # Paths to applicaiton (JSON) and label (image)
     image_path = "/home/biegemt1/projects/alcohol_label_verification/tests/test_images/" + testing_file_name + image_type
     json_path = "/home/biegemt1/projects/alcohol_label_verification/tests/applications/" + testing_file_name + ".json"
-    print(f"\nProcessing: {image_path}")
-    print("=" * 60)
+    
+    print(f"Processing: {image_path}")
 
     # Read in application via json
     application_data = read_json_file(json_path)
@@ -225,23 +218,10 @@ def main(testing_file_name, image_type):
     # Load in label image
     img = cv2.imread(image_path)
 
-    # print("Running preprocessing...")
-    # img = preprocess(img)
-    # cv2.imwrite("upscaled.png", img)
-    # print("Finished preprocessing")
-
-    start_time = time.perf_counter()
     # Run paddleOCR on label to get text
     results = process_image_ocr(img)
-    stop_time = time.perf_counter()
-
     # Sort output from paddleOCR so text is chronological
     text_result_list = sort_text(results, img.shape[1], img.shape[0])
-
-    # for item in results:
-    #     for field in item:
-    #         if field == "rec_texts":
-    #             print("\n\nOriginal Output:", item[field])
 
     # Check if gov warning is 100% correct
     has_valid_gov_warning = check_government_warning(text_result_list)
@@ -250,22 +230,9 @@ def main(testing_file_name, image_type):
     # TODO: Remove gov warning text for less possible errors???
     text_result_single_string = "".join(text_result_list).replace(" ", "").lower()
 
-    # print("Ordered Output:", text_result_list)
-    # print()
-    # print("SINGLE STRING:", text_result_single_string)
-    # print()
-
     application_data_modified = {}
     for item in application_data:
         application_data_modified[item] = application_data[item].replace(" ", "").lower()
-
-    # print("application_data_modified:", application_data_modified)
-    # print()
-    # print("----------------")
-    # print(application_data)
-    # print(application_data_modified)
-    # print("----------------")
-
 
     # Check if label has correct brand_name
     if (application_data_modified["brand_name"] in text_result_single_string):
@@ -291,55 +258,78 @@ def main(testing_file_name, image_type):
     #     print("Net Contents match?", has_net_contents)
     #     print("Gov Warning match?", has_valid_gov_warning)
 
-    return {"brand_name": [has_brand_name,],
+    return {"brand_name": has_brand_name,
             "class_type": has_class_type,
             "alcohol_content": has_abv,
             "net_contents": has_net_contents,
-            "gov_warning": has_valid_gov_warning,
-    }
+            "gov_warning": has_valid_gov_warning
+    }, text_result_single_string
 
-    total_stop_time = time.perf_counter()
-
-    elapsed_time = stop_time - start_time
-    total_time = total_stop_time - total_start_time
-    # print("\nOCR time:", elapsed_time)
-    # print("Total script time:", total_time)
-
-def run_tests():
     
-    expected_results = read_json_file("/home/biegemt1/projects/alcohol_label_verification/tests/expected_results.json")
+
+def run_tests(expected_results):
+    
+    failed_counter = 0
+    test_counter = 1
+    failed_tests_list = []
+
     for item in expected_results:
+        print("\n")
+        print("=" * 120)
+        print("Test", test_counter)
         file_name = item
         extension = expected_results[item]["image_type"]
-        single_result_dict = expected_results[item]["expected_values"]
+        complete_file_name = file_name + extension
 
-        results_dict = main(file_name, extension)
+        test_failure = run_single_test(complete_file_name, expected_results)
 
-        print("\nOUTPUT for", file_name,"-")
-        print(single_result_dict)
-        print(results_dict)
-        print()
+        if test_failure:
+            failed_counter += 1
+            failed_tests_list.append(test_counter)
 
-        if (single_result_dict == results_dict):
-            print("OUPTUT is EXPECTED; SUCCESS")
-        else:
-            print("------------------------INCORRECT OUTPUT - The following did not match------------------------")
-            if (single_result_dict["brand_name"] != results_dict["brand_name"]):
-                print("Brand Name:", single_result_dict["brand_name"], "!=", results_dict["brand_name"])
+        test_counter += 1
 
-            if (single_result_dict["class_type"] != results_dict["class_type"]):
-                print("Class Type match?", single_result_dict["class_type"], "!=", results_dict["class_type"])
-
-            if (single_result_dict["alcohol_content"] != results_dict["alcohol_content"]):
-                print("ABV match?", single_result_dict["alcohol_content"], "!=", results_dict["alcohol_content"])
-            
-            if (single_result_dict["net_contents"] != results_dict["net_contents"]):
-                print("Net Contents match?", single_result_dict["net_contents"], "!=", results_dict["net_contents"])
-            
-            if (single_result_dict["gov_warning"] != results_dict["gov_warning"]):
-                print("Gov Warning match?", single_result_dict["gov_warning"], "!=", results_dict["gov_warning"])
+    print("\nRESULTS:")
+    print("Number of FAILED TESTS =", failed_counter)
+    print("Tests that failed:", failed_tests_list)
 
 
+def run_single_test(base_file_name, expected_results):
+    start_time = time.perf_counter()
+    file_name, extension = base_file_name.split(".")
+    extension = "." + extension
+    single_result_dict = expected_results[file_name]["expected_values"]
+    test_failed = False
+
+    results_dict, entire_string = run_detection(file_name, extension)
+
+    if (single_result_dict == results_dict):
+        print("OUTPUT is EXPECTED; SUCCESS")
+    else:
+        print("------------------------INCORRECT OUTPUT - The following did not match------------------------")
+        print("Entire string of chars from image:\n"entire_string,"\n")
+        if (single_result_dict["brand_name"] != results_dict["brand_name"]):
+            print("Brand Name:", single_result_dict["brand_name"], "!=", results_dict["brand_name"])
+
+        if (single_result_dict["class_type"] != results_dict["class_type"]):
+            print("Class Type match?", single_result_dict["class_type"], "!=", results_dict["class_type"])
+
+        if (single_result_dict["alcohol_content"] != results_dict["alcohol_content"]):
+            print("ABV match?", single_result_dict["alcohol_content"], "!=", results_dict["alcohol_content"])
+        
+        if (single_result_dict["net_contents"] != results_dict["net_contents"]):
+            print("Net Contents match?", single_result_dict["net_contents"], "!=", results_dict["net_contents"])
+        
+        if (single_result_dict["gov_warning"] != results_dict["gov_warning"]):
+            print("Gov Warning match?", single_result_dict["gov_warning"], "!=", results_dict["gov_warning"])
+        
+        test_failed = True
+
+    stop_time = time.perf_counter()
+    run_test_time = stop_time - start_time
+    print("Time to run tests:", run_test_time)
+
+    return test_failed
 
 if __name__ == "__main__":
 
@@ -352,20 +342,12 @@ if __name__ == "__main__":
         use_doc_unwarping=True
     )
 
-    run_tests()
+    expected_results = read_json_file("/home/biegemt1/projects/alcohol_label_verification/tests/expected_results.json")
+    run_tests(expected_results)
 
-    # run_single_image()
-
-
-    # test_file_name = "1.png"
-    # split_name = test_file_name.split(".")
-    # main(split_name[0], split_name[1])
-
-
-
-
-
-
+    # complete_file_name = "1.png"
+    # run_single_test("1.png", expected_results)
+    
 
     # TODO: Need to determine if rotating & unwrapping are necessary (if not can run quicker model). Not a core requirement
         # Need to calculate resolution and dpi of image to let user know if it will be more or less accurate (OCR isn't perfect)
