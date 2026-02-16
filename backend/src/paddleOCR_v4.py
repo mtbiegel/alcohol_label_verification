@@ -166,35 +166,6 @@ def check_government_warning(text_list: list) -> list:
     # If we get here, then something went wrong, so return False
     return False
 
-def preprocess(img):
-    ### Scales up
-    # h, w = img.shape[:2]
-    # # Only upscale if image is smaller than 1200px on longest side
-    # if max(h, w) < 1200:
-    #     scale = 1200 / max(h, w)
-    #     img = cv2.resize(img, None, fx=scale, fy=scale, 
-    #                     interpolation=cv2.INTER_LANCZOS4)
-
-    # ### Contrast
-    # lab   = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-    # l, a, b = cv2.split(lab)
-    # clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    # l     = clahe.apply(l)
-    # img   = cv2.cvtColor(cv2.merge([l, a, b]), cv2.COLOR_LAB2BGR)
-
-    # ### Sharpen
-    # kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
-    # img = cv2.filter2D(img, -1, kernel)
-    # return img
-
-    sr = dnn_superres.DnnSuperResImpl_create()
-    sr.readModel("EDSR_x4.pb")
-    sr.setModel("edsr", 4)
-
-    result = sr.upsample(img)
-
-    return result
-
 def process_image_ocr(img):
     return ocr.predict(img)
 
@@ -247,17 +218,6 @@ def run_detection(testing_file_name, image_type):
     if (application_data_modified["net_contents"] in text_result_single_string):
         has_net_contents = True
 
-    # # Determine if label passes or fails
-    # if (has_abv and has_brand_name and has_class_type and has_net_contents and has_valid_gov_warning):
-    #     print("LABEL PASSES: All fields are present and valid")
-    # else:
-    #     print("LABEL FAILS----------------------")
-    #     print("Brand Name match?", has_brand_name)
-    #     print("Class Type match?", has_class_type)
-    #     print("ABV match?", has_abv)
-    #     print("Net Contents match?", has_net_contents)
-    #     print("Gov Warning match?", has_valid_gov_warning)
-
     return {"brand_name": has_brand_name,
             "class_type": has_class_type,
             "alcohol_content": has_abv,
@@ -265,9 +225,7 @@ def run_detection(testing_file_name, image_type):
             "gov_warning": has_valid_gov_warning
     }, text_result_single_string
 
-    
-
-def run_tests(expected_results):
+def run_all_tests(expected_results):
     
     failed_counter = 0
     test_counter = 1
@@ -279,9 +237,8 @@ def run_tests(expected_results):
         print("Test", test_counter)
         file_name = item
         extension = expected_results[item]["image_type"]
-        complete_file_name = file_name + extension
 
-        test_failure = run_single_test(complete_file_name, expected_results)
+        test_failure = run_single_test(file_name, extension, expected_results)
 
         if test_failure:
             failed_counter += 1
@@ -290,38 +247,35 @@ def run_tests(expected_results):
         test_counter += 1
 
     print("\nRESULTS:")
-    print("Number of FAILED TESTS =", failed_counter)
+    print("Number of FAILED TESTS =", failed_counter, " out of", len(expected_results))
     print("Tests that failed:", failed_tests_list)
 
-
-def run_single_test(base_file_name, expected_results):
+def run_single_test(file_name, extension, expected_results):
     start_time = time.perf_counter()
-    file_name, extension = base_file_name.split(".")
-    extension = "." + extension
-    single_result_dict = expected_results[file_name]["expected_values"]
+    expected_result_attributes = expected_results[file_name]["expected_values"]
     test_failed = False
 
     results_dict, entire_string = run_detection(file_name, extension)
 
-    if (single_result_dict == results_dict):
+    if (expected_result_attributes == results_dict):
         print("OUTPUT is EXPECTED; SUCCESS")
     else:
         print("------------------------INCORRECT OUTPUT - The following did not match------------------------")
-        print("Entire string of chars from image:\n"entire_string,"\n")
-        if (single_result_dict["brand_name"] != results_dict["brand_name"]):
-            print("Brand Name:", single_result_dict["brand_name"], "!=", results_dict["brand_name"])
+        print("Entire string of chars from image:\n", entire_string,"\n")
+        if (expected_result_attributes["brand_name"] != results_dict["brand_name"]):
+            print("Brand Name: Should've been", expected_result_attributes["brand_name"], "but was actually", results_dict["brand_name"])
 
-        if (single_result_dict["class_type"] != results_dict["class_type"]):
-            print("Class Type match?", single_result_dict["class_type"], "!=", results_dict["class_type"])
+        if (expected_result_attributes["class_type"] != results_dict["class_type"]):
+            print("Class Type match: Should've been", expected_result_attributes["class_type"], "but was actually", results_dict["class_type"])
 
-        if (single_result_dict["alcohol_content"] != results_dict["alcohol_content"]):
-            print("ABV match?", single_result_dict["alcohol_content"], "!=", results_dict["alcohol_content"])
+        if (expected_result_attributes["alcohol_content"] != results_dict["alcohol_content"]):
+            print("ABV match: Should've been", expected_result_attributes["alcohol_content"], "but was actually", results_dict["alcohol_content"])
         
-        if (single_result_dict["net_contents"] != results_dict["net_contents"]):
-            print("Net Contents match?", single_result_dict["net_contents"], "!=", results_dict["net_contents"])
+        if (expected_result_attributes["net_contents"] != results_dict["net_contents"]):
+            print("Net Contents match: Should've been", expected_result_attributes["net_contents"], "but was actually", results_dict["net_contents"])
         
-        if (single_result_dict["gov_warning"] != results_dict["gov_warning"]):
-            print("Gov Warning match?", single_result_dict["gov_warning"], "!=", results_dict["gov_warning"])
+        if (expected_result_attributes["gov_warning"] != results_dict["gov_warning"]):
+            print("Gov Warning match: Should've been", expected_result_attributes["gov_warning"], "but was actually", results_dict["gov_warning"])
         
         test_failed = True
 
@@ -333,6 +287,7 @@ def run_single_test(base_file_name, expected_results):
 
 if __name__ == "__main__":
 
+    # Load in model
     print("Loading PaddleOCR model...")
     ocr = PaddleOCR(
         lang='en',
@@ -342,11 +297,27 @@ if __name__ == "__main__":
         use_doc_unwarping=True
     )
 
-    expected_results = read_json_file("/home/biegemt1/projects/alcohol_label_verification/tests/expected_results.json")
-    run_tests(expected_results)
+    # User-defined image to run on
+    image_file_name = "3.png"
 
-    # complete_file_name = "1.png"
-    # run_single_test("1.png", expected_results)
+    # Sets up file name and extension properly
+    file_name, extension = image_file_name.split(".")
+    extension = "." + extension
+
+    # Running test cases
+    expected_result_json_path = "/home/biegemt1/projects/alcohol_label_verification/tests/expected_results.json"
+    expected_results = read_json_file(expected_result_json_path)
+   
+    # NOTE: Runs single test from file name
+    # test_failed = run_single_test(file_name, extension, expected_results)
+    # print("Did the test failed?", test_failed)
+
+    # NOTE: Running all tests in "expected_results.json"
+    run_all_tests(expected_results)
+
+    # NOTE: Run specific image to get results
+    # results, entire_string = run_detection(file_name, extension)
+    # print("Results:", results)
     
 
     # TODO: Need to determine if rotating & unwrapping are necessary (if not can run quicker model). Not a core requirement

@@ -16,7 +16,7 @@
             "class_type":true,
             "alcohol_content":true,
             "net_contents":true,
-            "gov_warning":false
+            "gov_warning":true
         }
     },
     "2": {
@@ -26,7 +26,7 @@
             "class_type":true,
             "alcohol_content":true,
             "net_contents":true,
-            "gov_warning":false
+            "gov_warning":true
         }
     },
     "3": {
@@ -36,7 +36,7 @@
             "class_type":true,
             "alcohol_content":true,
             "net_contents":true,
-            "gov_warning":false
+            "gov_warning":true
         }
     },
     "4": {
