@@ -54,6 +54,9 @@ async def verify(image: UploadFile = File(...), applicationData: str = Form(...)
     print("At API endpoint")
     image_bytes = await image.read()
     app_data = json.loads(applicationData)
+    
+    print("APP DATA:\n", app_data)
+    
 
     model = label_ocr.load_model()
     print("Loaded Model")    
