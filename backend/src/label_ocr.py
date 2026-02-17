@@ -166,10 +166,10 @@ def check_government_warning(text_list: list) -> list:
     # If we get here, then something went wrong, so return False
     return False
 
-def process_image_ocr(img):
-    return ocr.predict(img)
+def process_image_ocr(model, img):
+    return model.predict(img)
 
-def run_detection(testing_file_name, image_type):
+def run_detection(model, testing_file_name, image_type):
     
     has_brand_name = False
     has_class_type = False
@@ -190,7 +190,7 @@ def run_detection(testing_file_name, image_type):
     img = cv2.imread(image_path)
 
     # Run paddleOCR on label to get text
-    results = process_image_ocr(img)
+    results = process_image_ocr(model, img)
     # Sort output from paddleOCR so text is chronological
     text_result_list = sort_text(results, img.shape[1], img.shape[0])
 
@@ -225,7 +225,82 @@ def run_detection(testing_file_name, image_type):
             "gov_warning": has_valid_gov_warning
     }, text_result_single_string
 
-def run_all_tests(expected_results):
+def load_model():
+    # Load in model
+    print("Loading PaddleOCR model...")
+    ocr = PaddleOCR(
+        lang='en',
+        device='cpu',
+        use_textline_orientation=True,
+        use_doc_orientation_classify=True,
+        use_doc_unwarping=True
+    )
+
+    return ocr
+
+# Input vars are the image in bytes and the application_data already loaded in frmo json
+def verify_label(model, image_bytes: bytes, application_data):
+
+    has_brand_name = False
+    has_class_type = False
+    has_abv = False
+    has_net_contents = False
+    has_location = False
+
+    # # Read in application via json
+    # application_data = read_json_file(json_path)
+
+    # # Load in label image
+    # img = cv2.imread(image_path)
+
+    # Load in label image from bytes
+    np_img_arr = np.frombuffer(image_bytes, np.uint8)
+    img = cv2.imdecode(np_img_arr, cv2.IMREAD_COLOR)
+    
+    # TODO: DELETE
+    # print()
+    # for item in application_data:
+    #     print(f"{item}: {application_data[item]}")
+    # print()
+
+    # Run paddleOCR on label to get text
+    results = process_image_ocr(model, img)
+    # Sort output from paddleOCR so text is chronological
+    text_result_list = sort_text(results, img.shape[1], img.shape[0])
+
+    # Check if gov warning is 100% correct
+    has_valid_gov_warning = check_government_warning(text_result_list)
+
+    # Combine into 1 string and convert to lowercase.
+    # TODO: Remove gov warning text for less possible errors???
+    text_result_single_string = "".join(text_result_list).replace(" ", "").lower()
+
+    application_data_modified = {}
+    for item in application_data:
+        application_data_modified[item] = application_data[item].replace(" ", "").lower()
+
+    # Check if label has correct brand_name
+    if (application_data_modified["brand_name"] in text_result_single_string):
+        has_brand_name = True
+
+    if (application_data_modified["class_type"] in text_result_single_string):
+        has_class_type = True
+
+    if (application_data_modified["alcohol_content"] in text_result_single_string):
+        has_abv = True
+
+    if (application_data_modified["net_contents"] in text_result_single_string):
+        has_net_contents = True
+        print(f"{application_data_modified["net_contents"]} IS IN NET CONTENTS\n")
+
+    return {"brand_name": has_brand_name,
+            "class_type": has_class_type,
+            "alcohol_content": has_abv,
+            "net_contents": has_net_contents,
+            "gov_warning": has_valid_gov_warning
+    }, text_result_single_string
+
+def run_all_tests(model, expected_results):
     
     failed_counter = 0
     test_counter = 1
@@ -238,7 +313,7 @@ def run_all_tests(expected_results):
         file_name = item
         extension = expected_results[item]["image_type"]
 
-        test_failure = run_single_test(file_name, extension, expected_results)
+        test_failure = run_single_test(model, file_name, extension, expected_results)
 
         if test_failure:
             failed_counter += 1
@@ -250,12 +325,12 @@ def run_all_tests(expected_results):
     print("Number of FAILED TESTS =", failed_counter, "out of", len(expected_results))
     print("Tests that failed:", failed_tests_list)
 
-def run_single_test(file_name, extension, expected_results):
+def run_single_test(model, file_name, extension, expected_results):
     start_time = time.perf_counter()
     expected_result_attributes = expected_results[file_name]["expected_values"]
     test_failed = False
 
-    results_dict, entire_string = run_detection(file_name, extension)
+    results_dict, entire_string = run_detection(model, file_name, extension)
 
     if (expected_result_attributes == results_dict):
         print("OUTPUT is EXPECTED; SUCCESS")
@@ -288,14 +363,7 @@ def run_single_test(file_name, extension, expected_results):
 if __name__ == "__main__":
 
     # Load in model
-    print("Loading PaddleOCR model...")
-    ocr = PaddleOCR(
-        lang='en',
-        device='cpu',
-        use_textline_orientation=True,
-        use_doc_orientation_classify=True,
-        use_doc_unwarping=True
-    )
+    model = load_model()
 
     # User-defined image to run on
     image_file_name = "3.png"
@@ -309,14 +377,14 @@ if __name__ == "__main__":
     expected_results = read_json_file(expected_result_json_path)
    
     # NOTE: Runs single test from file name
-    # test_failed = run_single_test(file_name, extension, expected_results)
+    # test_failed = run_single_test(model, file_name, extension, expected_results)
     # print("Did the test failed?", test_failed)
 
     # NOTE: Running all tests in "expected_results.json"
-    run_all_tests(expected_results)
+    run_all_tests(model, expected_results)
 
     # NOTE: Run specific image to get results
-    # results, entire_string = run_detection(file_name, extension)
+    # results, entire_string = run_detection(model, file_name, extension)
     # print("Results:", results)
     
 

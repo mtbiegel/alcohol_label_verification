@@ -3,13 +3,13 @@
   let { data = $bindable() }: { data: ApplicationData } = $props();
 
   const fields: { key: keyof ApplicationData; label: string; placeholder: string; multiline?: boolean }[] = [
-    { key: 'brandName', label: 'Brand Name', placeholder: 'e.g. OLD TOM DISTILLERY' },
-    { key: 'classType', label: 'Class / Type', placeholder: 'e.g. Kentucky Straight Bourbon Whiskey' },
-    { key: 'alcoholContent', label: 'Alcohol Content', placeholder: 'e.g. 45% Alc./Vol. (90 Proof)' },
-    { key: 'netContents', label: 'Net Contents', placeholder: 'e.g. 750 mL' },
-    { key: 'producerName', label: 'Bottler / Producer Name & Address', placeholder: 'e.g. Old Tom Distillery, Louisville, KY' },
-    { key: 'countryOfOrigin', label: 'Country of Origin', placeholder: 'e.g. USA (or leave blank if domestic)' },
-    { key: 'governmentWarning', label: 'Government Warning Statement', placeholder: 'GOVERNMENT WARNING: ...', multiline: true }
+    { key: 'brand_name', label: 'Brand Name', placeholder: 'e.g. OLD TOM DISTILLERY' },
+    { key: 'class_type', label: 'Class / Type', placeholder: 'e.g. Kentucky Straight Bourbon Whiskey' },
+    { key: 'alcohol_content', label: 'Alcohol Content', placeholder: 'e.g. 45% Alc./Vol. (90 Proof)' },
+    { key: 'net_contents', label: 'Net Contents', placeholder: 'e.g. 750 mL' },
+    { key: 'producer_name', label: 'Bottler / Producer Name & Address', placeholder: 'e.g. Old Tom Distillery, Louisville, KY' },
+    { key: 'country_of_origin', label: 'Country of Origin', placeholder: 'e.g. USA (or leave blank if domestic)' },
+    { key: 'gov_warning', label: 'Government Warning Statement', placeholder: 'GOVERNMENT WARNING: ...', multiline: true }
   ];
 </script>
 

@@ -1,11 +1,11 @@
 export interface ApplicationData {
-  brandName: string;
-  classType: string;
-  alcoholContent: string;
-  netContents: string;
-  producerName: string;
-  countryOfOrigin: string;
-  governmentWarning: string;
+  brand_name: string;
+  class_type: string;
+  alcohol_content: string;
+  net_contents: string;
+  producer_name: string;
+  country_of_origin: string;
+  gov_warning: string;
 }
 
 export interface FieldResult {
