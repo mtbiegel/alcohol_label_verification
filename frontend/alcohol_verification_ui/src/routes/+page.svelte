@@ -17,11 +17,12 @@
   let applicationData = $state<ApplicationData>({
     brand_name: '',
     class_type: '',
-    alcohol_content: '',
-    net_contents: '',
+    alcohol_content_amount: '',
+    alcohol_content_format: '',
+    net_contents_amount: '',
+    net_contents_unit: '',
     producer_name: '',
-    country_of_origin: '',
-    gov_warning: 'GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.'
+    country_of_origin: ''
   });
 
   function handleImageSelect(file: File) {
@@ -72,11 +73,12 @@
     applicationData = {
       brand_name: '',
       class_type: '',
-      alcohol_content: '',
-      net_contents: '',
+      alcohol_content_amount: '',
+      alcohol_content_format: '',
+      net_contents_amount: '',
+      net_contents_unit: '',
       producer_name: '',
-      country_of_origin: '',
-      gov_warning: 'GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.'
+      country_of_origin: ''
     };
   }
 </script>

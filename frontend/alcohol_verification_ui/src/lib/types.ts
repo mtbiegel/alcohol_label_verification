@@ -1,11 +1,12 @@
 export interface ApplicationData {
   brand_name: string;
   class_type: string;
-  alcohol_content: string;
-  net_contents: string;
+  alcohol_content_amount: string;
+  alcohol_content_format: string;
+  net_contents_amount: string;
+  net_contents_unit: string;
   producer_name: string;
   country_of_origin: string;
-  gov_warning: string;
 }
 
 export interface FieldResult {

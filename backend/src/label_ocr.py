@@ -6,6 +6,7 @@ import cv2
 from cv2 import dnn_superres
 import numpy as np
 import json
+import time
 
 os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = "True"
 os.environ["FLAGS_use_mkldnn"] = "0"
@@ -45,14 +46,161 @@ NOT_BRAND_WORDS = [
     *SPIRIT_DESCRIPTORS
 ]
 
+def sort_text(results, img_width: int, img_height: int) -> list:
+    """
+    Extract text from PaddleOCR results in correct reading order.
+    Groups items into lines by y-proximity, sorts each line left-to-right,
+    and handles side-by-side labels by detecting full-height column gaps.
+    """
+    # 1. Extract all items with bounding box info
+    items = []
+    for item in results:
+        for text, score, poly in zip(item.get('rec_texts', []),
+                                     item.get('rec_scores', []),
+                                     item.get('dt_polys', [])):
+            if score > 0.2 and text.strip():
+                items.append({
+                    'text':     text,
+                    'center_x': np.mean([p[0] for p in poly]),
+                    'center_y': np.mean([p[1] for p in poly]),
+                    'top_y':    min([p[1] for p in poly]),
+                    'bot_y':    max([p[1] for p in poly]),
+                    'left_x':   min([p[0] for p in poly]),
+                    'right_x':  max([p[0] for p in poly]),
+                })
+
+    if not items:
+        return []
+
+    # 2. Detect full-height column gap (real label separator spans entire image height)
+    num_bands   = 8
+    band_height = img_height / num_bands
+    mid_start   = img_width // 3
+    mid_end     = 2 * img_width // 3
+    min_gap_px  = img_width * 0.05
+
+    gap_start  = None
+    best_split = None
+
+    for x in range(mid_start, mid_end):
+        bands_clear = 0
+        for b in range(num_bands):
+            band_top = b * band_height
+            band_bot = (b + 1) * band_height
+            crosses = any(
+                i['left_x'] < x < i['right_x'] and
+                i['top_y']  < band_bot and
+                i['bot_y']  > band_top
+                for i in items
+            )
+            if not crosses:
+                bands_clear += 1
+
+        is_clear = (bands_clear / num_bands) >= 0.8
+
+        if is_clear:
+            if gap_start is None:
+                gap_start = x
+        else:
+            if gap_start is not None:
+                if (x - gap_start) >= min_gap_px:
+                    best_split = (gap_start + x) // 2
+                    break
+            gap_start = None
+
+    # 3. Group items into lines and sort left-to-right within each line
+    def sort_into_lines(group: list) -> list:
+        if not group:
+            return []
+        avg_height      = np.mean([i['bot_y'] - i['top_y'] for i in group])
+        line_threshold  = avg_height * 0.5
+        sorted_items    = sorted(group, key=lambda i: i['center_y'])
+        lines           = [[sorted_items[0]]]
+
+        for item in sorted_items[1:]:
+            if abs(item['center_y'] - lines[-1][-1]['center_y']) <= line_threshold:
+                lines[-1].append(item)
+            else:
+                lines.append([item])
+
+        result = []
+        for line in lines:
+            result.extend(sorted(line, key=lambda i: i['left_x']))
+        return result
+
+    # 4. Apply to single label or each column
+    if best_split is None:
+        return [i['text'] for i in sort_into_lines(items)]
+
+    left  = [i for i in items if i['center_x'] <  best_split]
+    right = [i for i in items if i['center_x'] >= best_split]
+
+    return [i['text'] for i in sort_into_lines(left)] + \
+           [i['text'] for i in sort_into_lines(right)]
+
+def check_government_warning(text_list: list) -> list:
+     
+    gov_warning_exists = False
+    start = 0
+    stop = 0
+    start_word = "GOVERNMENT"
+    end_word = "PROBLEMS."
+
+    all_text = " ".join(text_list).upper()
+
+    if ("GOVERNMENT WARNING" in all_text):
+        gov_warning_exists = True
+
+    if (gov_warning_exists):
+        start = all_text.find(start_word)
+        stop = all_text.find(end_word) + len(end_word)
+        gov_str = all_text[start:stop]
+
+        # Need to use fuzzy to determine if it's close but not perfect (aka manual review)
+        if (gov_str == GOV_WARNING_STR.upper()):
+            matching_ratio = 100.0
+        else:
+            matching_ratio = fuzz.partial_ratio(gov_str, GOV_WARNING_STR.upper())
+
+        # Gov Warning is an exact match
+        if (matching_ratio == 100.0):
+            return True
+        # Gov warning is a partial match
+        elif (matching_ratio >= 95):
+            return False
+        # Gov warning is not even a partial match
+        else:
+            return False
+    # No warning label found
+    else:
+        return False
+
+    # If we get here, then something went wrong, so return False
+    return False
+
+def process_image_ocr(model, img):
+    return model.predict(img)
+
+def load_model():
+    # Load in model
+    print("Loading PaddleOCR model...")
+    ocr = PaddleOCR(
+        lang='en',
+        device='cpu',
+        use_textline_orientation=True,
+        use_doc_orientation_classify=True,
+        use_doc_unwarping=True,
+    )
+
+    return ocr
+
+
+
 def classify_brand_name(text_list: list, ocr_results: list) -> str:
     """
-    Extract brand name using two strategies:
-    1. Primary: Find the tallest/largest text in the upper portion of the label
-    2. Fallback: Find prominent text that appears before producer/distillery info
+    Extract brand name by finding the tallest text and grouping all tokens
+    on the same line together.
     """
-    # ── Strategy 1: Use bounding box height from raw OCR results ──
-    # Brand name is almost always the largest text on the label
     candidates = []
     for item in ocr_results:
         for text, score, poly in zip(
@@ -65,62 +213,61 @@ def classify_brand_name(text_list: list, ocr_results: list) -> str:
 
             text_lower = text.strip().lower()
 
-            # Skip non-brand words
             if text_lower in NOT_BRAND_WORDS:
                 continue
-
-            # Skip numbers, punctuation-only, very short strings
             if text.isdigit() or len(text.strip()) < 2:
                 continue
-
-            # Skip % and volume patterns
             if re.search(r'\d+%|\d+\s*ml|\d+\s*l\b', text_lower):
                 continue
 
-            # Calculate text height from bounding polygon
             y_coords = [p[1] for p in poly]
             x_coords = [p[0] for p in poly]
             text_height = max(y_coords) - min(y_coords)
             center_y    = np.mean(y_coords)
             center_x    = np.mean(x_coords)
+            left_x      = min(x_coords)
 
             candidates.append({
                 'text':   text.strip(),
                 'height': text_height,
                 'y':      center_y,
                 'x':      center_x,
+                'left_x': left_x,
                 'score':  score
             })
 
-    if candidates:
-        # Get image height to filter top portion
-        all_y = [c['y'] for c in candidates]
-        img_height_approx = max(all_y) + 50
+    if not candidates:
+        return ""
 
-        # Filter to top 50% of label
-        top_candidates = [c for c in candidates if c['y'] < img_height_approx * 0.5]
+    # Filter to top 50% of label
+    all_y = [c['y'] for c in candidates]
+    img_height_approx = max(all_y) + 50
+    top_candidates = [c for c in candidates if c['y'] < img_height_approx * 0.5]
 
-        if top_candidates:
-            # Brand name = tallest text in top half
-            brand = max(top_candidates, key=lambda c: c['height'])
-            return brand['text']
+    if not top_candidates:
+        top_candidates = candidates
 
-    # ── Strategy 2: Fallback using text list order ──
-    # Look for the first meaningful word that isn't a descriptor
-    for text in text_list:
-        text_clean = text.strip()
-        text_lower = text_clean.lower()
+    # Find the single tallest token — this anchors the brand name line
+    tallest = max(top_candidates, key=lambda c: c['height'])
 
-        if text_lower in NOT_BRAND_WORDS:
-            continue
-        if len(text_clean) < 2 or text_clean.isdigit():
-            continue
-        if re.search(r'\d+%|\d+\s*ml', text_lower):
-            continue
+    # ── Group all tokens on the same line as the tallest token ──
+    # "Same line" = within 50% of the tallest token's height in y-distance
+    line_threshold = tallest['height'] * 0.5
 
-        return text_clean
+    same_line = [
+        c for c in top_candidates
+        if abs(c['y'] - tallest['y']) <= line_threshold
+        and c['text'].lower() not in NOT_BRAND_WORDS
+    ]
 
-    return ""
+    if not same_line:
+        return tallest['text']
+
+    # Sort left to right and join
+    same_line_sorted = sorted(same_line, key=lambda c: c['left_x'])
+    brand_name = ' '.join(c['text'] for c in same_line_sorted)
+
+    return brand_name
 
 def classify_class_type(text_list: list) -> str:
     """
@@ -244,10 +391,11 @@ def classify_net_contents(text_list: list) -> str:
 
     return ""
 
-def verify_label_2(model, image_path, application_data):
+def verify_label(model, image_bytes, application_data):
 
-    # Load in label image
-    img = cv2.imread(image_path)
+    # Load in label image from bytes
+    np_img_arr = np.frombuffer(image_bytes, np.uint8)
+    img = cv2.imdecode(np_img_arr, cv2.IMREAD_COLOR)
 
     # Run paddleOCR
     results = process_image_ocr(model, img)
@@ -299,10 +447,77 @@ def verify_label_2(model, image_path, application_data):
             return 'warning'
         return 'fail'
 
+    def compare_alcohol_content(extracted: str, expected: str) -> tuple:
+        """
+        Compare alcohol content flexibly.
+        '47% ABV', '47% ALC/VOL', '47%', '47 PROOF' should all match if the number matches.
+        """
+        if not extracted:
+            return ('fail', 'Alcohol content not found on label')
+        if not expected:
+            return ('pass', None)
+
+        # Pull the number out of both strings
+        ext_nums = re.findall(r'\d+\.?\d*', extracted)
+        exp_nums = re.findall(r'\d+\.?\d*', expected)
+
+        if not ext_nums or not exp_nums:
+            return ('fail', f'Could not parse alcohol content: "{extracted}" vs "{expected}"')
+
+        ext_num = float(ext_nums[0])
+        exp_num = float(exp_nums[0])
+
+        # Numbers match exactly
+        if ext_num == exp_num:
+            # Check if format indicators are compatible (ABV vs ALC/VOL is fine, PROOF vs % is a warning)
+            ext_has_proof = 'proof' in extracted.lower()
+            exp_has_proof = 'proof' in expected.lower()
+
+            if ext_has_proof != exp_has_proof:
+                return ('warning', f'Percentage matches but format differs: "{extracted}" vs "{expected}"')
+
+            return ('pass', None)
+
+        # Numbers are close but not exact (rounding differences)
+        if abs(ext_num - exp_num) <= 0.5:
+            return ('warning', f'Minor difference: "{extracted}" vs "{expected}"')
+
+        return ('fail', f'Alcohol content mismatch: found "{extracted}", expected "{expected}"')
+
+    def compare_net_contents(extracted: str, expected: str) -> tuple:
+        """
+        Compare net contents with explicit combined string e.g. '750 mL'.
+        Number AND unit must both match to pass.
+        """
+        if not extracted:
+            return ('fail', 'Net contents not found on label')
+        if not expected:
+            return ('pass', None)
+
+        # Pull number from both
+        ext_nums = re.findall(r'\d+\.?\d*', extracted)
+        exp_nums = re.findall(r'\d+\.?\d*', expected)
+
+        if not ext_nums or not exp_nums:
+            return ('fail', f'Could not parse net contents: "{extracted}" vs "{expected}"')
+
+        # Numbers must match
+        if ext_nums[0] != exp_nums[0]:
+            return ('fail', f'Volume mismatch: found "{extracted}", expected "{expected}"')
+
+        # Unit must match
+        ext_unit = re.sub(r'[\d\.\s]', '', extracted).strip().lower()
+        exp_unit = re.sub(r'[\d\.\s]', '', expected).strip().lower()
+
+        if ext_unit != exp_unit:
+            return ('fail', f'Unit mismatch: found "{extracted}", expected "{expected}"')
+
+        return ('pass', None)
+
     brand_status    = fuzzy_match(extracted_brand,    application_data.get('brand_name', ''))
     class_status    = fuzzy_match(extracted_class,    application_data.get('class_type', ''))
-    alcohol_status  = exact_match(extracted_alcohol,  application_data.get('alcohol_content', ''))
-    contents_status = exact_match(extracted_contents, application_data.get('net_contents', ''))
+    alcohol_status, alcohol_note = compare_alcohol_content(extracted_alcohol, application_data.get('alcohol_content', ''))
+    contents_status, contents_note = compare_net_contents(extracted_contents, f"{application_data['net_contents_amount']} {application_data['net_contents_unit']}")
     warning_status  = 'pass' if has_valid_warning else 'fail'
 
     # ── Build response ──
@@ -326,14 +541,14 @@ def verify_label_2(model, image_path, application_data):
             'extracted': extracted_alcohol,
             'expected':  application_data.get('alcohol_content', ''),
             'status':    alcohol_status,
-            'note':      'Format difference' if alcohol_status == 'warning' else None
+            'note':      alcohol_note
         },
         {
             'field':     'Net Contents',
             'extracted': extracted_contents,
             'expected':  application_data.get('net_contents', ''),
             'status':    contents_status,
-            'note':      'Format difference' if contents_status == 'warning' else None
+            'note':      contents_note
         },
         {
             'field':     'Government Warning',
@@ -356,399 +571,44 @@ def verify_label_2(model, image_path, application_data):
         'fields':        fields
     }
 
-
-
-
-
-def sort_text(results, img_width: int, img_height: int) -> list:
-    """
-    Extract text from PaddleOCR results in correct reading order.
-    Groups items into lines by y-proximity, sorts each line left-to-right,
-    and handles side-by-side labels by detecting full-height column gaps.
-    """
-    # 1. Extract all items with bounding box info
-    items = []
-    for item in results:
-        for text, score, poly in zip(item.get('rec_texts', []),
-                                     item.get('rec_scores', []),
-                                     item.get('dt_polys', [])):
-            if score > 0.2 and text.strip():
-                items.append({
-                    'text':     text,
-                    'center_x': np.mean([p[0] for p in poly]),
-                    'center_y': np.mean([p[1] for p in poly]),
-                    'top_y':    min([p[1] for p in poly]),
-                    'bot_y':    max([p[1] for p in poly]),
-                    'left_x':   min([p[0] for p in poly]),
-                    'right_x':  max([p[0] for p in poly]),
-                })
-
-    if not items:
-        return []
-
-    # 2. Detect full-height column gap (real label separator spans entire image height)
-    num_bands   = 8
-    band_height = img_height / num_bands
-    mid_start   = img_width // 3
-    mid_end     = 2 * img_width // 3
-    min_gap_px  = img_width * 0.05
-
-    gap_start  = None
-    best_split = None
-
-    for x in range(mid_start, mid_end):
-        bands_clear = 0
-        for b in range(num_bands):
-            band_top = b * band_height
-            band_bot = (b + 1) * band_height
-            crosses = any(
-                i['left_x'] < x < i['right_x'] and
-                i['top_y']  < band_bot and
-                i['bot_y']  > band_top
-                for i in items
-            )
-            if not crosses:
-                bands_clear += 1
-
-        is_clear = (bands_clear / num_bands) >= 0.8
-
-        if is_clear:
-            if gap_start is None:
-                gap_start = x
-        else:
-            if gap_start is not None:
-                if (x - gap_start) >= min_gap_px:
-                    best_split = (gap_start + x) // 2
-                    break
-            gap_start = None
-
-    # 3. Group items into lines and sort left-to-right within each line
-    def sort_into_lines(group: list) -> list:
-        if not group:
-            return []
-        avg_height      = np.mean([i['bot_y'] - i['top_y'] for i in group])
-        line_threshold  = avg_height * 0.5
-        sorted_items    = sorted(group, key=lambda i: i['center_y'])
-        lines           = [[sorted_items[0]]]
-
-        for item in sorted_items[1:]:
-            if abs(item['center_y'] - lines[-1][-1]['center_y']) <= line_threshold:
-                lines[-1].append(item)
-            else:
-                lines.append([item])
-
-        result = []
-        for line in lines:
-            result.extend(sorted(line, key=lambda i: i['left_x']))
-        return result
-
-    # 4. Apply to single label or each column
-    if best_split is None:
-        return [i['text'] for i in sort_into_lines(items)]
-
-    left  = [i for i in items if i['center_x'] <  best_split]
-    right = [i for i in items if i['center_x'] >= best_split]
-
-    return [i['text'] for i in sort_into_lines(left)] + \
-           [i['text'] for i in sort_into_lines(right)]
-
-def read_json_file(filename):
-    """
-    Reads data from a JSON file and returns a Python dictionary or list.
-    """
-    try:
-        # Open the file in read mode ('r') using a context manager
-        with open(filename, 'r') as file:
-            # Use json.load() to parse the file content directly
-            data = json.load(file)
-        return data
-    except FileNotFoundError:
-        print(f"Error: The file '{filename}' was not found.")
-        return None
-    except json.JSONDecodeError:
-        print(f"Error: Failed to decode JSON from the file '{filename}'. Check the file's format.")
-        return None
-
-def check_government_warning(text_list: list) -> list:
-     
-    gov_warning_exists = False
-    start = 0
-    stop = 0
-    start_word = "GOVERNMENT"
-    end_word = "PROBLEMS."
-
-    all_text = " ".join(text_list).upper()
-
-    if ("GOVERNMENT WARNING" in all_text):
-        gov_warning_exists = True
-
-    if (gov_warning_exists):
-        start = all_text.find(start_word)
-        stop = all_text.find(end_word) + len(end_word)
-        gov_str = all_text[start:stop]
-
-        # Need to use fuzzy to determine if it's close but not perfect (aka manual review)
-        if (gov_str == GOV_WARNING_STR.upper()):
-            matching_ratio = 100.0
-        else:
-            matching_ratio = fuzz.partial_ratio(gov_str, GOV_WARNING_STR.upper())
-
-        # Gov Warning is an exact match
-        if (matching_ratio == 100.0):
-            return True
-        # Gov warning is a partial match
-        elif (matching_ratio >= 95):
-            return False
-        # Gov warning is not even a partial match
-        else:
-            return False
-    # No warning label found
-    else:
-        return False
-
-    # If we get here, then something went wrong, so return False
-    return False
-
-def process_image_ocr(model, img):
-    return model.predict(img)
-
-def run_detection(model, testing_file_name, image_type):
-    
-    has_brand_name = False
-    has_class_type = False
-    has_abv = False
-    has_net_contents = False
-    has_location = False
-
-    # Paths to applicaiton (JSON) and label (image)
-    image_path = "/home/biegemt1/projects/alcohol_label_verification/tests/test_images/" + testing_file_name + image_type
-    json_path = "/home/biegemt1/projects/alcohol_label_verification/tests/applications/" + testing_file_name + ".json"
-    
-    print(f"Processing: {image_path}")
-
-    # Read in application via json
-    application_data = read_json_file(json_path)
-
-    # Load in label image
-    img = cv2.imread(image_path)
-
-    # Run paddleOCR on label to get text
-    results = process_image_ocr(model, img)
-    print()
-    print(results)
-    print()
-    # Sort output from paddleOCR so text is chronological
-    text_result_list = sort_text(results, img.shape[1], img.shape[0])
-
-    # Check if gov warning is 100% correct
-    has_valid_gov_warning = check_government_warning(text_result_list)
-
-    # Combine into 1 string and convert to lowercase.
-    # TODO: Remove gov warning text for less possible errors???
-    text_result_single_string = "".join(text_result_list).replace(" ", "").lower()
-
-    application_data_modified = {}
-    for item in application_data:
-        application_data_modified[item] = application_data[item].replace(" ", "").lower()
-
-    # Check if label has correct brand_name
-    if (application_data_modified["brand_name"] in text_result_single_string):
-        has_brand_name = True
-
-    if (application_data_modified["class_type"] in text_result_single_string):
-        has_class_type = True
-
-    if (application_data_modified["alcohol_content"] in text_result_single_string):
-        has_abv = True
-
-    if (application_data_modified["net_contents"] in text_result_single_string):
-        has_net_contents = True
-
-    return {"brand_name": has_brand_name,
-            "class_type": has_class_type,
-            "alcohol_content": has_abv,
-            "net_contents": has_net_contents,
-            "gov_warning": has_valid_gov_warning
-    }, text_result_single_string
-
-def load_model():
-    # Load in model
-    print("Loading PaddleOCR model...")
-    ocr = PaddleOCR(
-        lang='en',
-        device='cpu',
-        use_textline_orientation=True,
-        use_doc_orientation_classify=True,
-        use_doc_unwarping=True,
-    )
-
-    return ocr
-
-# Input vars are the image in bytes and the application_data already loaded in frmo json
-def verify_label(model, image_bytes: bytes, application_data):
-
-    has_brand_name = False
-    has_class_type = False
-    has_abv = False
-    has_net_contents = False
-    has_location = False
-
-    # Load in label image from bytes
-    np_img_arr = np.frombuffer(image_bytes, np.uint8)
-    img = cv2.imdecode(np_img_arr, cv2.IMREAD_COLOR)
-    
-    # TODO: DELETE
-    # print()
-    # for item in application_data:
-    #     print(f"{item}: {application_data[item]}")
-    # print()
-
-    # Run paddleOCR on label to get text
-    results = process_image_ocr(model, img)
-    # Sort output from paddleOCR so text is chronological
-    text_result_list = sort_text(results, img.shape[1], img.shape[0])
-
-    # Check if gov warning is 100% correct
-    has_valid_gov_warning = check_government_warning(text_result_list)
-
-    # Combine into 1 string and convert to lowercase.
-    # TODO: Remove gov warning text for less possible errors???
-    text_result_single_string = "".join(text_result_list).replace(" ", "").lower()
-
-    application_data_modified = {}
-    for item in application_data:
-        application_data_modified[item] = application_data[item].replace(" ", "").lower()
-
-    # Check if label has correct brand_name
-    if (application_data_modified["brand_name"] in text_result_single_string):
-        has_brand_name = True
-
-    if (application_data_modified["class_type"] in text_result_single_string):
-        has_class_type = True
-
-    if (application_data_modified["alcohol_content"] in text_result_single_string):
-        has_abv = True
-
-    if (application_data_modified["net_contents"] in text_result_single_string):
-        has_net_contents = True
-        print(f"{application_data_modified["net_contents"]} IS IN NET CONTENTS\n")
-
-    return {"brand_name": has_brand_name,
-            "class_type": has_class_type,
-            "alcohol_content": has_abv,
-            "net_contents": has_net_contents,
-            "gov_warning": has_valid_gov_warning
-    }, text_result_single_string
-
-def run_all_tests(model, expected_results):
-    
-    failed_counter = 0
-    test_counter = 1
-    failed_tests_list = []
-
-    for item in expected_results:
-        print("\n")
-        print("=" * 120)
-        print("Test", test_counter)
-        file_name = item
-        extension = expected_results[item]["image_type"]
-
-        test_failure = run_single_test(model, file_name, extension, expected_results)
-
-        if test_failure:
-            failed_counter += 1
-            failed_tests_list.append(test_counter)
-
-        test_counter += 1
-
-    print("\nRESULTS:")
-    print("Number of FAILED TESTS =", failed_counter, "out of", len(expected_results))
-    print("Tests that failed:", failed_tests_list)
-
-def run_single_test(model, file_name, extension, expected_results):
-    start_time = time.perf_counter()
-    expected_result_attributes = expected_results[file_name]["expected_values"]
-    test_failed = False
-
-    results_dict, entire_string = run_detection(model, file_name, extension)
-
-    if (expected_result_attributes == results_dict):
-        print("OUTPUT is EXPECTED; SUCCESS")
-    else:
-        print("------------------------INCORRECT OUTPUT - The following did not match------------------------")
-        print("Entire string of chars from image:\n", entire_string,"\n")
-        if (expected_result_attributes["brand_name"] != results_dict["brand_name"]):
-            print("Brand Name: Should've been", expected_result_attributes["brand_name"], "but was actually", results_dict["brand_name"])
-
-        if (expected_result_attributes["class_type"] != results_dict["class_type"]):
-            print("Class Type match: Should've been", expected_result_attributes["class_type"], "but was actually", results_dict["class_type"])
-
-        if (expected_result_attributes["alcohol_content"] != results_dict["alcohol_content"]):
-            print("ABV match: Should've been", expected_result_attributes["alcohol_content"], "but was actually", results_dict["alcohol_content"])
-        
-        if (expected_result_attributes["net_contents"] != results_dict["net_contents"]):
-            print("Net Contents match: Should've been", expected_result_attributes["net_contents"], "but was actually", results_dict["net_contents"])
-        
-        if (expected_result_attributes["gov_warning"] != results_dict["gov_warning"]):
-            print("Gov Warning match: Should've been", expected_result_attributes["gov_warning"], "but was actually", results_dict["gov_warning"])
-        
-        test_failed = True
-
-    stop_time = time.perf_counter()
-    run_test_time = stop_time - start_time
-    print("Time to run tests:", run_test_time)
-
-    return test_failed
-
 if __name__ == "__main__":
 
     # Load in model
     model = load_model()
-
-    # User-defined image to run on
-    image_file_name = "1_chatgpt-upscale.png"
-
-    # Sets up file name and extension properly
-    file_name, extension = image_file_name.split(".")
-    extension = "." + extension
-
-    # Running test cases
-    expected_result_json_path = "/home/biegemt1/projects/alcohol_label_verification/tests/expected_results.json"
-    expected_results = read_json_file(expected_result_json_path)
    
     app_data = {
         "brand_name": "ABC",
-        "class_type": "Straight Rye Whisky",
-        "alcohol_content": "45% ALC/VOL",
-        "net_contents": "750 ML",
+        "class_type": "single barrel straight Rye Whisky",
+        "alcohol_content": "44% ALC/VOL",
+        "net_contents": "750ml",
         "producer_name": "ABC Distillery Frederick, MD",
         "country_of_origin": "USA",
-        "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+        "government_warning": GOV_WARNING_STR
     }
     
-    verify_label_2_results = verify_label_2(model, "/home/biegemt1/projects/alcohol_label_verification/tests/test_images/1_chatgpt-upscale.png", app_data)
-    print(verify_label_2_results)
+    image_path = "/home/biegemt1/projects/alcohol_label_verification/tests/test_images/1_chatgpt-upscale.png"
 
+    with open(image_path, 'rb') as f:
+        image_bytes = f.read()
 
-    # NOTE: Runs single test from file name
-    # test_failed = run_single_test(model, file_name, extension, expected_results)
-    # print("Did the test fail?", test_failed)
-
-    # NOTE: Running all tests in "expected_results.json"
-    # run_all_tests(model, expected_results)
-
-    # NOTE: Run specific image to get results
-    # results, entire_string = run_detection(model, file_name, extension)
-    # print("Results:", results)
+    img = cv2.imread(image_path)
+    _, buffer = cv2.imencode('.png', img)
+    image_bytes = buffer.tobytes()
     
-
-    # TODO: Need to determine if rotating & unwrapping are necessary (if not can run quicker model). Not a core requirement
-        # Need to calculate resolution and dpi of image to let user know if it will be more or less accurate (OCR isn't perfect)
-        # Add option for longer, more accurate scanning in GUI and enable these options, but disable them by default. 
-        # Automatically rerun ones that are labeled as partial matches with the more accurate model
+    start_time = time.perf_counter()
+    verify_label_results = verify_label(model, image_bytes, app_data)
+    stop_time = time.perf_counter()
+    elapsed_time = stop_time - start_time
     
-    # TODO: Document how this can be improved
-        # - Using a GPU
-        # - Using a local LLM trained specifically for text recognition
-
-    # NOTE: Requirement to run this code is to have a processor that supports AVX512/AVX2 at least
+    print()
+    for field in verify_label_results:
+        if field == "fields":
+            field_subset = verify_label_results[field]
+            for item in field_subset:
+                print(f"{item}")
+            print()
+        else:
+            print(f"{field}: {verify_label_results[field]}\n")
+    print()
+    print("Total processing time:", elapsed_time)
+    print()
