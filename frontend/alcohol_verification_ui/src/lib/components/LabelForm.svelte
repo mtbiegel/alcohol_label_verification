@@ -16,7 +16,7 @@
 <div class="flex flex-col gap-4">
   <!-- Brand Name -->
   <div>
-    <label class="block text-sm font-medium text-gray-700 mb-1" for="brand_name">Brand Name</label>
+    <label class="block text-sm font-medium text-gray-700 mb-1" for="brand_name">Brand Name*</label>
     <input
       id="brand_name"
       type="text"
@@ -28,7 +28,7 @@
 
   <!-- Class Type -->
   <div>
-    <label class="block text-sm font-medium text-gray-700 mb-1" for="class_type">Class / Type</label>
+    <label class="block text-sm font-medium text-gray-700 mb-1" for="class_type">Class / Type*</label>
     <input
       id="class_type"
       type="text"
@@ -43,7 +43,7 @@
 
     <!-- Alcohol Content -->
     <div class="flex-1">
-      <label class="block text-sm font-medium text-gray-700 mb-1">Alcohol Content</label>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Alcohol Content*</label>
       <div class="flex gap-2">
         <input
           type="number"
@@ -64,7 +64,7 @@
 
     <!-- Net Contents -->
     <div class="flex-1">
-      <label class="block text-sm font-medium text-gray-700 mb-1">Net Contents</label>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Net Contents*</label>
       <div class="flex gap-2">
         <input
           type="number"

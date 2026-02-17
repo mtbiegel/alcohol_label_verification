@@ -21,6 +21,7 @@ async def verify(image: UploadFile = File(...), applicationData: str = Form(...)
     app_data = json.loads(applicationData)
 
     # Combine into single string for the classifier
+    app_data['alcohol_content'] = f"{app_data['alcohol_content_amount']} {app_data['alcohol_content_format']}"
     app_data['net_contents'] = f"{app_data['net_contents_amount']} {app_data['net_contents_unit']}"
 
     model = label_ocr.load_model()

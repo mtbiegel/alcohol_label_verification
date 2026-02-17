@@ -46,11 +46,12 @@ NOT_BRAND_WORDS = [
     *SPIRIT_DESCRIPTORS
 ]
 
-def sort_text(results, img_width: int, img_height: int) -> list:
+def sort_text(results, img_width: int, img_height: int) -> tuple[list, int | None]:
     """
     Extract text from PaddleOCR results in correct reading order.
     Groups items into lines by y-proximity, sorts each line left-to-right,
     and handles side-by-side labels by detecting full-height column gaps.
+    Returns (sorted_text_list, best_split_x)
     """
     # 1. Extract all items with bounding box info
     items = []
@@ -70,7 +71,7 @@ def sort_text(results, img_width: int, img_height: int) -> list:
                 })
 
     if not items:
-        return []
+        return [], None
 
     # 2. Detect full-height column gap (real label separator spans entire image height)
     num_bands   = 8
@@ -128,55 +129,15 @@ def sort_text(results, img_width: int, img_height: int) -> list:
             result.extend(sorted(line, key=lambda i: i['left_x']))
         return result
 
-    # 4. Apply to single label or each column
+    # 4. Apply to single label or each column  ← THIS IS UNCHANGED, splitting still happens
     if best_split is None:
-        return [i['text'] for i in sort_into_lines(items)]
+        return [i['text'] for i in sort_into_lines(items)], None  # ← only change
 
     left  = [i for i in items if i['center_x'] <  best_split]
     right = [i for i in items if i['center_x'] >= best_split]
 
     return [i['text'] for i in sort_into_lines(left)] + \
-           [i['text'] for i in sort_into_lines(right)]
-
-def check_government_warning(text_list: list) -> list:
-     
-    gov_warning_exists = False
-    start = 0
-    stop = 0
-    start_word = "GOVERNMENT"
-    end_word = "PROBLEMS."
-
-    all_text = " ".join(text_list).upper()
-
-    if ("GOVERNMENT WARNING" in all_text):
-        gov_warning_exists = True
-
-    if (gov_warning_exists):
-        start = all_text.find(start_word)
-        stop = all_text.find(end_word) + len(end_word)
-        gov_str = all_text[start:stop]
-
-        # Need to use fuzzy to determine if it's close but not perfect (aka manual review)
-        if (gov_str == GOV_WARNING_STR.upper()):
-            matching_ratio = 100.0
-        else:
-            matching_ratio = fuzz.partial_ratio(gov_str, GOV_WARNING_STR.upper())
-
-        # Gov Warning is an exact match
-        if (matching_ratio == 100.0):
-            return True
-        # Gov warning is a partial match
-        elif (matching_ratio >= 95):
-            return False
-        # Gov warning is not even a partial match
-        else:
-            return False
-    # No warning label found
-    else:
-        return False
-
-    # If we get here, then something went wrong, so return False
-    return False
+           [i['text'] for i in sort_into_lines(right)], best_split  # ← only change
 
 def process_image_ocr(model, img):
     return model.predict(img)
@@ -194,13 +155,73 @@ def load_model():
 
     return ocr
 
-
-
-def classify_brand_name(text_list: list, ocr_results: list) -> str:
+def check_government_warning(text_list: list) -> tuple[str, str | None]:
     """
-    Extract brand name by finding the tallest text and grouping all tokens
-    on the same line together.
+    Checks the government warning statement against the required text.
+    
+    Returns:
+        ('pass', None)                  - exact match
+        ('warning', note)               - close but not exact, needs review
+        ('fail', note)                  - missing or too different
     """
+    all_text = " ".join(text_list).upper()
+    expected = GOV_WARNING_STR.upper()
+
+    # ── Step 1: Check if warning is present at all ──
+    if "GOVERNMENT WARNING" not in all_text:
+        return ('fail', 'Government warning statement not found on label')
+
+    # ── Step 2: Check if "GOVERNMENT WARNING:" is correctly capitalized ──
+    # Since we already uppercased everything, check the original text_list
+    original_text = " ".join(text_list)
+    if "GOVERNMENT WARNING:" not in original_text:
+        if "government warning:" in original_text.lower():
+            # Present but not in all caps - this is a specific TTB violation
+            return ('fail', '"GOVERNMENT WARNING:" must be in all capitals')
+
+    # ── Step 3: Extract just the warning portion from the label ──
+    start_word = "GOVERNMENT"
+    end_word   = "PROBLEMS."
+
+    start = all_text.find(start_word)
+    end   = all_text.find(end_word)
+
+    if start == -1:
+        return ('fail', 'Government warning statement not found on label')
+
+    if end == -1:
+        # Warning starts but doesn't end — truncated or cut off
+        extracted_warning = all_text[start:].strip()
+        return ('warning', 'Warning statement appears truncated — could not find end of statement')
+
+    extracted_warning = all_text[start : end + len(end_word)].strip()
+
+    # ── Step 4: Exact match ──
+    if extracted_warning == expected:
+        return ('pass', None)
+
+    # ── Step 5: Fuzzy match for close but not exact ──
+    full_ratio    = fuzz.ratio(extracted_warning, expected)
+    partial_ratio = fuzz.partial_ratio(extracted_warning, expected)
+    best_score    = max(full_ratio, partial_ratio)
+    best_score_rounded = round(best_score, 1)
+
+    # Exact match threshold
+    if best_score == 100:
+        return ('pass', None)
+
+    # Close enough to be a likely OCR error rather than intentional change
+    if best_score >= 95:
+        return ('warning', f'Warning statement is very close but not exact (similarity: {best_score_rounded}%). May be an OCR artifact — manual review recommended')
+
+    # Recognizable but has meaningful differences
+    if best_score >= 80:
+        return ('warning', f'Warning statement has notable differences from required text (similarity: {best_score_rounded}%). Manual review required')
+
+    # Present but too different — likely wrong or heavily modified
+    return ('fail', f'Warning statement does not match required text (similarity: {best_score_rounded}%)')
+
+def classify_brand_name(text_list: list, ocr_results: list, best_split: int | None = None) -> str:
     candidates = []
     for item in ocr_results:
         for text, score, poly in zip(
@@ -212,7 +233,6 @@ def classify_brand_name(text_list: list, ocr_results: list) -> str:
                 continue
 
             text_lower = text.strip().lower()
-
             if text_lower in NOT_BRAND_WORDS:
                 continue
             if text.isdigit() or len(text.strip()) < 2:
@@ -222,18 +242,15 @@ def classify_brand_name(text_list: list, ocr_results: list) -> str:
 
             y_coords = [p[1] for p in poly]
             x_coords = [p[0] for p in poly]
-            text_height = max(y_coords) - min(y_coords)
-            center_y    = np.mean(y_coords)
-            center_x    = np.mean(x_coords)
-            left_x      = min(x_coords)
 
             candidates.append({
-                'text':   text.strip(),
-                'height': text_height,
-                'y':      center_y,
-                'x':      center_x,
-                'left_x': left_x,
-                'score':  score
+                'text':    text.strip(),
+                'height':  max(y_coords) - min(y_coords),
+                'y':       np.mean(y_coords),
+                'x':       np.mean(x_coords),
+                'left_x':  min(x_coords),
+                'right_x': max(x_coords),
+                'score':   score
             })
 
     if not candidates:
@@ -247,13 +264,19 @@ def classify_brand_name(text_list: list, ocr_results: list) -> str:
     if not top_candidates:
         top_candidates = candidates
 
-    # Find the single tallest token — this anchors the brand name line
+    # Find tallest token
     tallest = max(top_candidates, key=lambda c: c['height'])
 
-    # ── Group all tokens on the same line as the tallest token ──
-    # "Same line" = within 50% of the tallest token's height in y-distance
-    line_threshold = tallest['height'] * 0.5
+    # ── Constrain to same column using best_split ──
+    if best_split is not None:
+        tallest_side = 'left' if tallest['x'] < best_split else 'right'
+        top_candidates = [
+            c for c in top_candidates
+            if ('left' if c['x'] < best_split else 'right') == tallest_side
+        ]
 
+    # Group tokens on the same line
+    line_threshold = tallest['height'] * 0.5
     same_line = [
         c for c in top_candidates
         if abs(c['y'] - tallest['y']) <= line_threshold
@@ -263,11 +286,8 @@ def classify_brand_name(text_list: list, ocr_results: list) -> str:
     if not same_line:
         return tallest['text']
 
-    # Sort left to right and join
     same_line_sorted = sorted(same_line, key=lambda c: c['left_x'])
-    brand_name = ' '.join(c['text'] for c in same_line_sorted)
-
-    return brand_name
+    return ' '.join(c['text'] for c in same_line_sorted)
 
 def classify_class_type(text_list: list) -> str:
     """
@@ -401,51 +421,81 @@ def verify_label(model, image_bytes, application_data):
     results = process_image_ocr(model, img)
 
     # Sort output from paddleOCR so text is in reading order
-    text_result_list = sort_text(results, img.shape[1], img.shape[0])
+    text_result_list, best_split = sort_text(results, img.shape[1], img.shape[0])
 
     # ── Run classifiers ──
-    extracted_brand    = classify_brand_name(text_result_list, results)
-    extracted_class    = classify_class_type(text_result_list)
-    extracted_alcohol  = classify_alcohol_content(text_result_list)
+    extracted_brand = classify_brand_name(text_result_list, results, best_split)
+    extracted_class = classify_class_type(text_result_list)
+    extracted_alcohol = classify_alcohol_content(text_result_list)
     extracted_contents = classify_net_contents(text_result_list)
-    has_valid_warning  = check_government_warning(text_result_list)
+    has_valid_warning = check_government_warning(text_result_list)
 
-    # ── Compare extracted vs expected ──
-    def fuzzy_match(extracted: str, expected: str, threshold: int = 85) -> str:
-        """Returns 'pass', 'warning', or 'fail'"""
+    def compare_brand_name(extracted: str, expected: str) -> tuple:
         if not extracted:
-            return 'fail'
+            return ('fail', 'Brand name not found on label')
         if not expected:
-            return 'pass'
-        
-        # Normalize
-        ext = extracted.lower().strip()
-        exp = expected.lower().strip()
-        
-        if ext == exp:
-            return 'pass'
-        
-        ratio = fuzz.ratio(ext, exp)
-        partial = fuzz.partial_ratio(ext, exp)
-        best = max(ratio, partial)
-        
-        if best >= threshold:
-            return 'warning'
-        return 'fail'
+            return ('pass', None)
 
-    def exact_match(extracted: str, expected: str) -> str:
-        """For fields that must match exactly (like ABV and net contents)"""
+        ext_norm = extracted.lower().strip()
+        exp_norm = expected.lower().strip()
+
+        # Exact match
+        if ext_norm == exp_norm:
+            return ('pass', None)
+
+        # Length difference check — must be within 85% of each other
+        # "AB" vs "ABC" = 0.67 → fail
+        # "ABCD" vs "ABC" = 0.75 → fail
+        # "ABCE" vs "ABCD" = 1.0 → proceed to fuzzy
+        len_ratio = min(len(ext_norm), len(exp_norm)) / max(len(ext_norm), len(exp_norm))
+        if len_ratio < 0.85:
+            return ('fail', f'Brand name mismatch: found "{extracted}", expected "{expected}"')
+
+        # Only use fuzz.ratio — never partial_ratio for brand names
+        # partial_ratio causes false positives by matching substrings
+        similarity = fuzz.ratio(ext_norm, exp_norm)
+        similarity_rounded = round(similarity, 1)
+
+        if similarity == 100:
+            return ('pass', None)
+
+        # High similarity — likely just case or minor OCR difference
+        if similarity >= 90:
+            return ('warning', f'Minor difference (similarity {similarity_rounded}%)')
+
+        # Moderate similarity — possibly correct but needs review
+        if similarity >= 75:
+            return ('warning', f'Possible match but significant difference( similarity {similarity_rounded}%)')
+
+        return ('fail', f'Brand name mismatch')
+
+    def compare_class_type(extracted: str, expected: str) -> tuple:
         if not extracted:
-            return 'fail'
-        # Normalize whitespace and case for these
-        ext = re.sub(r'\s+', '', extracted).lower()
-        exp = re.sub(r'\s+', '', expected).lower()
-        if ext == exp:
-            return 'pass'
-        # Small tolerance for format differences (e.g., "45%ALC/VOL" vs "45%Alc/Vol")
-        if fuzz.ratio(ext, exp) >= 90:
-            return 'warning'
-        return 'fail'
+            return ('fail', 'Class/type not found on label')
+        if not expected:
+            return ('pass', None)
+
+        ext_norm = extracted.lower().strip()
+        exp_norm = expected.lower().strip()
+
+        # Exact match
+        if ext_norm == exp_norm:
+            return ('pass', None)
+
+        # One is a substring of the other
+        if ext_norm in exp_norm or exp_norm in ext_norm:
+            return ('warning', f'Partial match — verify full class/type on label')
+
+        # Fuzzy match for things like "Whiskey" vs "Whisky"
+        similarity = fuzz.ratio(ext_norm, exp_norm)
+        partial    = fuzz.partial_ratio(ext_norm, exp_norm)
+        best       = max(similarity, partial)
+        best_rounded = round(best, 1)
+
+        if best >= 80:
+            return ('warning', f'Close match but difference detected (similarity: {best_rounded}%)"')
+
+        return ('fail', f'Class/type mismatch')
 
     def compare_alcohol_content(extracted: str, expected: str) -> tuple:
         """
@@ -474,15 +524,15 @@ def verify_label(model, image_bytes, application_data):
             exp_has_proof = 'proof' in expected.lower()
 
             if ext_has_proof != exp_has_proof:
-                return ('warning', f'Percentage matches but format differs: "{extracted}" vs "{expected}"')
+                return ('warning', f'Percentage matches but format differs"')
 
             return ('pass', None)
 
         # Numbers are close but not exact (rounding differences)
         if abs(ext_num - exp_num) <= 0.5:
-            return ('warning', f'Minor difference: "{extracted}" vs "{expected}"')
+            return ('warning', f'Minor difference detected"')
 
-        return ('fail', f'Alcohol content mismatch: found "{extracted}", expected "{expected}"')
+        return ('fail', f'Alcohol content mismatch')
 
     def compare_net_contents(extracted: str, expected: str) -> tuple:
         """
@@ -514,11 +564,11 @@ def verify_label(model, image_bytes, application_data):
 
         return ('pass', None)
 
-    brand_status    = fuzzy_match(extracted_brand,    application_data.get('brand_name', ''))
-    class_status    = fuzzy_match(extracted_class,    application_data.get('class_type', ''))
+    brand_status, brand_note = compare_brand_name(extracted_brand, application_data.get('brand_name', ''))
+    class_status, class_note = compare_class_type(extracted_class, application_data.get('class_type', ''))
     alcohol_status, alcohol_note = compare_alcohol_content(extracted_alcohol, application_data.get('alcohol_content', ''))
     contents_status, contents_note = compare_net_contents(extracted_contents, f"{application_data['net_contents_amount']} {application_data['net_contents_unit']}")
-    warning_status  = 'pass' if has_valid_warning else 'fail'
+    warning_status, warning_note = check_government_warning(text_result_list)
 
     # ── Build response ──
     fields = [
@@ -527,14 +577,14 @@ def verify_label(model, image_bytes, application_data):
             'extracted': extracted_brand,
             'expected':  application_data.get('brand_name', ''),
             'status':    brand_status,
-            'note':      'Minor difference detected' if brand_status == 'warning' else None
+            'note':      brand_note
         },
         {
             'field':     'Class/Type',
             'extracted': extracted_class,
             'expected':  application_data.get('class_type', ''),
             'status':    class_status,
-            'note':      'Minor difference detected' if class_status == 'warning' else None
+            'note':      class_note
         },
         {
             'field':     'Alcohol Content',
@@ -555,7 +605,7 @@ def verify_label(model, image_bytes, application_data):
             'extracted': 'GOVERNMENT WARNING: present' if has_valid_warning else 'Not found or incorrect',
             'expected':  'GOVERNMENT WARNING: (standard text)',
             'status':    warning_status,
-            'note':      None if has_valid_warning else 'Warning statement missing or does not match required text'
+            'note':      warning_note
         },
     ]
 

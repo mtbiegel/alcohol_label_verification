@@ -25,9 +25,6 @@
   };
 
   const config = $derived(statusConfig[result.overallStatus]);
-  const passCount = $derived(result.fields.filter(f => f.status === 'pass').length);
-  const failCount = $derived(result.fields.filter(f => f.status === 'fail').length);
-  const warnCount = $derived(result.fields.filter(f => f.status === 'warning').length);
 </script>
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -38,22 +35,6 @@
       <div>
         <h2 class="text-2xl font-bold tracking-wide">{config.label}</h2>
         <p class="text-sm opacity-90 mt-0.5">{config.description}</p>
-      </div>
-    </div>
-
-    <!-- Quick stats -->
-    <div class="flex gap-4 mt-4">
-      <div class="bg-white bg-opacity-20 rounded-lg px-3 py-2 text-center">
-        <p class="text-xl font-bold">{passCount}</p>
-        <p class="text-xs opacity-90">Passed</p>
-      </div>
-      <div class="bg-white bg-opacity-20 rounded-lg px-3 py-2 text-center">
-        <p class="text-xl font-bold">{failCount}</p>
-        <p class="text-xs opacity-90">Failed</p>
-      </div>
-      <div class="bg-white bg-opacity-20 rounded-lg px-3 py-2 text-center">
-        <p class="text-xl font-bold">{warnCount}</p>
-        <p class="text-xs opacity-90">Warnings</p>
       </div>
     </div>
   </div>
