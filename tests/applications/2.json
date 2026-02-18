@@ -1,7 +1,12 @@
 {
-    "brand_name":"Malt & Hop Brewery",
-    "class_type":"Ale",
-    "alcohol_content":"5%",
-    "net_contents":"1 pint",
-    "location":"Hyattsville, MD"
+    "brand_name": "Malt & Hop Brewery",
+    "class_type": "Ale",
+    "alcohol_content_amount": 5,
+    "alcohol_content_format": "%",
+    "net_contents_amount": 1,
+    "net_contents_unit": "pint",
+    "producer_name": "",
+    "country_of_origin": "",
+    "alcohol_content": "5 %",
+    "net_contents": "1 pint"
 }

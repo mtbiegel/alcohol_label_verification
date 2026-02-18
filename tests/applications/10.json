@@ -1,7 +1,12 @@
 {
-    "brand_name":"Silver Isle",
-    "class_type":"Rum",
-    "alcohol_content":"42%",
-    "net_contents":"750 mL",
-    "location":"Nassau, Bahamas"
+    "brand_name": "Silver Isle",
+    "class_type": "RUM",
+    "alcohol_content_amount": 42,
+    "alcohol_content_format": "%",
+    "net_contents_amount": 750,
+    "net_contents_unit": "mL",
+    "producer_name": "",
+    "country_of_origin": "",
+    "alcohol_content": "42 %",
+    "net_contents": "750 mL"
 }

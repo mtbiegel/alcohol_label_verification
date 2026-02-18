@@ -1,7 +1,12 @@
 {
-    "brand_name":"Stone Hop",
-    "class_type":"IPA",
-    "alcohol_content":"5%",
-    "net_contents":"355 mL",
-    "location":"Portland, Oregon"
+    "brand_name": "Stone Hop",
+    "class_type": "IPA",
+    "alcohol_content_amount": 5,
+    "alcohol_content_format": "%",
+    "net_contents_amount": 355,
+    "net_contents_unit": "mL",
+    "producer_name": "",
+    "country_of_origin": "",
+    "alcohol_content": "5 %",
+    "net_contents": "355 mL"
 }

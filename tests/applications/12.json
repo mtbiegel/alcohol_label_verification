@@ -1,12 +1,12 @@
 {
     "brand_name": "Barefoot",
-    "class_type": "Sauvignon BLANC",
-    "alcohol_content_amount": "",
+    "class_type": "Pinot Grigio",
+    "alcohol_content_amount": 12.5,
     "alcohol_content_format": "%",
     "net_contents_amount": 1.5,
     "net_contents_unit": "L",
     "producer_name": "",
     "country_of_origin": "",
-    "alcohol_content": "%",
+    "alcohol_content": "12.5 %",
     "net_contents": "1.5 L"
 }

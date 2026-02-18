@@ -1,13 +1,14 @@
+import asyncio
 import os
 import base64
 import json
 import re
-from openai import OpenAI
+from openai import AsyncOpenAI
 from rapidfuzz import fuzz
 from dotenv import load_dotenv
 
 load_dotenv()
-openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+openai_client = AsyncOpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 GOV_WARNING_STR = (
     "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink "
@@ -23,7 +24,7 @@ GOV_WARNING_MAIN_STR = (
     "operate machinery, and may cause health problems."
 )
 
-def extract_fields_with_vision(image_bytes, expected_values):
+async def extract_fields_with_vision(image_bytes, expected_values):
     """Use OpenAI Vision API to extract fields from label image"""
 
     expected_brand_name = expected_values["brand_name"]
@@ -35,37 +36,37 @@ def extract_fields_with_vision(image_bytes, expected_values):
     
     prompt = (f"""You are a TTB (Alcohol and Tobacco Tax and Trade Bureau) label compliance expert.
 
-Extract the following information from this alcohol beverage label and determine if the values match the expected values:
+    Extract the following information from this alcohol beverage label and determine if the values match the expected values:
 
-1. **Brand Name** - The main product brand (usually the largest text). The expected value is {expected_brand_name}. Does it match? Populate json accordingly with the instructions later in the message.
-2. **Class/Type** - The beverage category (e.g., "Straight Rye Whisky", "India Pale Ale", "Single Barrel Bourbon"). The expected value is {expected_class_type}. Does it match? Populate json accordingly with the instructions later in the message.
-3. **Alcohol Content** - The ABV percentage (e.g., "45% ALC/VOL", "5.5% ABV"). The expected value is {expected_alcohol_content}. Does it match? Populate json accordingly with the instructions later in the message.
-4. **Net Contents** - The volume (e.g., "750 ML", "12 FL OZ"). The expected value is {expected_net_content}. Does it match? Populate json accordingly with the instructions later in the message.
-5. **Government Warning** - Check if present and if "GOVERNMENT WARNING:" is in all caps. The expected value is {GOV_WARNING_STR}. Does it match? Populate json accordingly with the instructions later in the message.
+    1. **Brand Name** - The main product brand (usually the largest text). The expected value is {expected_brand_name}. Does it match? Populate json accordingly with the instructions later in the message.
+    2. **Class/Type** - The beverage category (e.g., "Straight Rye Whisky", "India Pale Ale", "Single Barrel Bourbon"). The expected value is {expected_class_type}. Does it match? Populate json accordingly with the instructions later in the message.
+    3. **Alcohol Content** - The ABV percentage (e.g., "45% ALC/VOL", "5.5% ABV"). The expected value is {expected_alcohol_content}. Does it match? Populate json accordingly with the instructions later in the message.
+    4. **Net Contents** - The volume (e.g., "750 ML", "12 FL OZ"). The expected value is {expected_net_content}. Does it match? Populate json accordingly with the instructions later in the message.
+    5. **Government Warning** - Check if present and if "GOVERNMENT WARNING:" is in all caps. The expected value is {GOV_WARNING_STR}. Does it match? Populate json accordingly with the instructions later in the message.
 
-Ignore captilization and adjusted for small discrepancies between the classified and expected values. 
-However, the government warning label must have the EXACT wording and capitalization as the expected value, but the words can be stacked or rotated",
-If the government warning is present in all caps as "GOVERNMENT WARNING:" and the main body of text as follows {GOV_WARNING_MAIN_STR} is present, then set "government_warning_matches" to true
-Respond with ONLY valid JSON (no markdown, no explanation):
-{{
-  "brand_name": "exact text from label",
-  "brand_name_matches": "true/false if brand name matches",
-  "class_type": "exact text from label",
-  "class_type_matches": "true/false if class type matches",
-  "alcohol_content": "exact text from label",
-  "alcohol_content_matches": "true/false if alcohol content matches expected value",
-  "net_contents": "exact text from label",
-  "net_contents_matches": "true/false if net contents matches expected value",
-  "government_warning_present": "true/false",
-  "government_warning_all_caps": "true/false",
-  "government_warning_text": "full text if present, empty string if not"
-  "government_warning_matches": "true/false if the government_warning_all_caps is set to true and government_warning_text equals {GOV_WARNING_MAIN_STR},
-}}
+    Ignore captilization and adjusted for small discrepancies between the classified and expected values. 
+    However, the government warning label must have the EXACT wording and capitalization as the expected value, but the words can be stacked or rotated",
+    If the government warning is present in all caps as "GOVERNMENT WARNING:" and the main body of text as follows {GOV_WARNING_MAIN_STR} is present, then set "government_warning_matches" to true
+    Respond with ONLY valid JSON (no markdown, no explanation):
+    {{
+        "brand_name": "exact text from label",
+        "brand_name_matches": "True/False if brand name matches",
+        "class_type": "exact text from label",
+        "class_type_matches": "True/False if class type matches",
+        "alcohol_content": "exact text from label",
+        "alcohol_content_matches": "True/False if alcohol content matches expected value",
+        "net_contents": "exact text from label",
+        "net_contents_matches": "True/False if net contents matches expected value",
+        "government_warning_present": True/False,
+        "government_warning_all_caps": True/False,
+        "government_warning_text": "full text if present, empty string if not",
+        "government_warning_matches": "True/False if the government_warning_all_caps is set to true and government_warning_text equals {GOV_WARNING_MAIN_STR}
+    }}
 
-If a field is not visible on the label, use an empty string.""")
+    If a field is not visible on the label, use an empty string.""")
 
     try:
-        response = openai_client.chat.completions.create(
+        response = await openai_client.chat.completions.create(
             model='gpt-4o-mini',
             max_tokens=800,
             messages=[{
@@ -101,11 +102,16 @@ If a field is not visible on the label, use an empty string.""")
         }
 
 
-def compare_brand_name(extracted: str, expected: str) -> tuple:
+def compare_brand_name(extracted: str, matches: bool, expected: str) -> tuple:
     if not extracted:
         return ('fail', 'Brand name not found on label')
     if not expected:
         return ('pass', None)
+
+    # Overrule algorithm-based classification if it says it matches
+    if matches:
+        print("AI SAYS BRAND NAME PASSES")
+        return ('pass', None) 
     
     ext_norm = extracted.lower().strip()
     exp_norm = expected.lower().strip()
@@ -128,11 +134,16 @@ def compare_brand_name(extracted: str, expected: str) -> tuple:
     return ('fail', f'Brand name mismatch')
 
 
-def compare_class_type(extracted: str, expected: str) -> tuple:
+def compare_class_type(extracted: str, matches: bool, expected: str) -> tuple:
     if not extracted:
         return ('fail', 'Class/type not found on label')
     if not expected:
         return ('pass', None)
+
+    # Overrule algorithm-based classification if it says it matches
+    if matches:
+        print("AI SAYS CLASS TYPE PASSES")
+        return ('pass', None) 
     
     ext_norm = extracted.lower().strip()
     exp_norm = expected.lower().strip()
@@ -153,11 +164,16 @@ def compare_class_type(extracted: str, expected: str) -> tuple:
     return ('fail', f'Class/type mismatch')
 
 
-def compare_alcohol_content(extracted: str, expected: str) -> tuple:
+def compare_alcohol_content(extracted: str, matches: bool, expected: str) -> tuple:
     if not extracted:
         return ('fail', 'Alcohol content not found on label')
     if not expected:
         return ('fail', 'Expected alcohol content is missing from application data')
+
+    # Overrule algorithm-based classification if it says it matches
+    if matches:
+        print("AI SAYS ALCOHOL CONTENT PASSES")
+        return ('pass', None) 
     
     ext_nums = re.findall(r'\d+\.?\d*', extracted)
     exp_nums = re.findall(r'\d+\.?\d*', expected)
@@ -183,11 +199,16 @@ def compare_alcohol_content(extracted: str, expected: str) -> tuple:
     return ('fail', f'Alcohol content mismatch')
 
 
-def compare_net_contents(extracted: str, expected: str) -> tuple:
+def compare_net_contents(extracted: str, matches: bool, expected: str) -> tuple:
     if not extracted:
         return ('fail', 'Net contents not found on label')
     if not expected:
         return ('pass', None)
+    
+    # Overrule algorithm-based classification if it says it matches
+    if matches:
+        print("AI SAYS NET CONTENTS PASSES")
+        return ('pass', None) 
     
     ext_nums = re.findall(r'\d+\.?\d*', extracted)
     exp_nums = re.findall(r'\d+\.?\d*', expected)
@@ -241,9 +262,10 @@ def check_government_warning(warning_present: bool, warning_all_caps: bool, warn
     return ('pass', None)
 
 
-def verify_label(image_bytes, application_data):
+async def verify_label(image_bytes, application_data, running_from_main=False):
     """
-    Main verification function using OpenAI Vision API
+    Main verification function using a base algorithm for
+    classification alongside OpenAI Vision API    
     
     Args:
         image_bytes: Raw image bytes from frontend upload
@@ -254,30 +276,40 @@ def verify_label(image_bytes, application_data):
     """
     
     # Extract fields using Vision API
-    extracted = extract_fields_with_vision(image_bytes, application_data)
-    print()
-    print("EXTRACTED:")
-    print(json.dumps(extracted, indent=2))
-    print()
+    # If running from main, need to use asyncio.run()
+    # Otherwise, run with await
+    if running_from_main:    
+        extracted = asyncio.run(extract_fields_with_vision(image_bytes, application_data))
+    else:
+        extracted = await extract_fields_with_vision(image_bytes, application_data)
+  
+    # print()
+    # print("EXTRACTED:")
+    # print(json.dumps(extracted, indent=2))
+    # print()
     
     # Compare each field
     brand_status, brand_note = compare_brand_name(
         extracted.get('brand_name', ''),
-        application_data.get('brand_name', '')
+        extracted.get('brand_name_matches', False),
+        application_data.get('brand_name', ''),
     )
     
     class_status, class_note = compare_class_type(
         extracted.get('class_type', ''),
+        extracted.get('class_type_matches', False),
         application_data.get('class_type', '')
     )
     
     alcohol_status, alcohol_note = compare_alcohol_content(
         extracted.get('alcohol_content', ''),
+        extracted.get('alcohol_content_matches', False),
         application_data.get('alcohol_content', '')
     )
     
     contents_status, contents_note = compare_net_contents(
         extracted.get('net_contents', ''),
+        extracted.get('net_contents_matches', False),
         f"{application_data.get('net_contents_amount', '')} {application_data.get('net_contents_unit', '')}".strip()
     )
     
@@ -339,10 +371,8 @@ def verify_label(image_bytes, application_data):
     }
 
 
-# Example usage
 if __name__ == "__main__":
     # Test with a sample image
-    # image_path = "/home/biegemt1/projects/alcohol_label_verification/tests/test_images/1_chatgpt-upscale.png"
     image_path = "/home/biegemt1/projects/alcohol_label_verification/tests/test_images/1.png"
     
     with open(image_path, 'rb') as f:
@@ -370,7 +400,7 @@ if __name__ == "__main__":
         "net_contents": "750 mL"
     }
     
-    result = verify_label(image_bytes, app_data2)
+    result = asyncio.run(verify_label(image_bytes, app_data2))
     
     print()
     print("RESULT:")

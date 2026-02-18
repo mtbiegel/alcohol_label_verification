@@ -1,7 +1,12 @@
 {
-    "brand_name":"Frost Point Distillery",
-    "class_type":"Vodka",
-    "alcohol_content":"40%",
-    "net_contents":"750 mL",
-    "location":"Anchorage, Alaska"
+    "brand_name": "Frost Point",
+    "class_type": "Vodka",
+    "alcohol_content_amount": 40,
+    "alcohol_content_format": "%",
+    "net_contents_amount": 750,
+    "net_contents_unit": "mL",
+    "producer_name": "",
+    "country_of_origin": "",
+    "alcohol_content": "40 %",
+    "net_contents": "750 mL"
 }
