@@ -15,6 +15,8 @@
   let background_opacity = 0.8;
   let background_size = 100;
 
+  let pairUploadRef = $state<any>(null);
+
   const completePairsCount = $derived(pairs.filter(p => p.status === 'complete').length);
   const incompletePairsCount = $derived(pairs.filter(p => p.status !== 'complete').length);
 
@@ -88,6 +90,12 @@
   }
 
   function handleReset() {
+    console.log("Clearing pairs:", pairs.map(p => p.baseName));
+
+    if (pairUploadRef) {
+      pairs.forEach(p => pairUploadRef.removePair(p.baseName));
+    }
+
     pairs = [];
     processedPairs = [];
     currentIndex = 0;
@@ -200,7 +208,11 @@
             </p>
           </div>
 
-          <PairUpload onPairsUpdate={handlePairsUpdate} />
+          <PairUpload
+            bind:this={pairUploadRef}
+            onPairsUpdate={handlePairsUpdate}
+            pairs={pairs}
+          />
         </section>
 
         <!-- Always visible verify button -->

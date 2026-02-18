@@ -93,11 +93,16 @@
     }
   }
 
-  function removePair(baseName: string) {
+  export function removePair(baseName: string) {
     const newPairs = new Map(pairs);
     newPairs.delete(baseName);
     pairs = newPairs;
     onPairsUpdate(Array.from(pairs.values()));
+  }
+
+  export function resetPairs() {
+    pairs = new Map();
+    onPairsUpdate([]);
   }
 
   function openFileBrowser() {
