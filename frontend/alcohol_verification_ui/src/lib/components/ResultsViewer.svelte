@@ -26,11 +26,14 @@
   }
 
   function downloadAllResults() {
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, -5); // Format: YYYY-MM-DDTHH-MM-SS
+    
     let csv = 'name,overall_status,brand_status,class_status,alcohol_status,volume_status,warning_status,summary\n';
     
     for (const pair of pairs) {
       if (!pair.result) continue;
-      const statuses = pair.result.fields.map(f => f.status);
+      const statuses = pair.result.fields.map(f => f.overridden ? 'pass (overridden)' : f.status);
       csv += `${pair.baseName},${pair.result.overallStatus},${statuses.join(',')},${pair.result.summary.replace(/,/g, ';')}\n`;
     }
 
@@ -38,9 +41,33 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `verification_results_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `verification_results_${timestamp}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  function handleFieldOverride(fieldIndex: number) {
+    if (currentPair.result) {
+      const field = currentPair.result.fields[fieldIndex];
+      field.status = 'pass';
+      field.overridden = true;
+      
+      // Recalculate overall status
+      const hasFailures = currentPair.result.fields.some(f => f.status === 'fail' && !f.overridden);
+      const hasWarnings = currentPair.result.fields.some(f => f.status === 'warning' && !f.overridden);
+      
+      if (!hasFailures && !hasWarnings) {
+        currentPair.result.overallStatus = 'approved';
+        currentPair.result.summary = 'All fields verified.';
+      } else if (hasFailures) {
+        currentPair.result.overallStatus = 'rejected';
+      } else {
+        currentPair.result.overallStatus = 'review';
+      }
+      
+      // Force reactivity
+      pairs = [...pairs];
+    }
   }
 </script>
 
@@ -112,7 +139,7 @@
 
   <!-- Current Result -->
   {#if currentPair.result}
-    <ResultsPanel result={currentPair.result} />
+    <ResultsPanel result={currentPair.result} onFieldOverride={handleFieldOverride} />
   {/if}
 
   <!-- Actions -->

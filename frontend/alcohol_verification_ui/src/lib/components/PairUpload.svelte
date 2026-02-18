@@ -5,9 +5,9 @@
 
   let pairs = $state<Map<string, FilePair>>(new Map());
   let isDragging = $state(false);
+  let fileInputElement: HTMLInputElement;
 
   function extractBaseName(filename: string): { baseName: string; type: 'image' | 'application' | null } {
-    // Remove extension
     const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'));
     
     if (nameWithoutExt.endsWith('_image')) {
@@ -47,7 +47,6 @@
         pair.imageFile = file;
       } else if (type === 'application') {
         pair.applicationFile = file;
-        // Read JSON file
         try {
           const text = await file.text();
           pair.applicationData = JSON.parse(text);
@@ -105,6 +104,10 @@
     onPairsUpdate(Array.from(pairs.values()));
   }
 
+  function openFileBrowser() {
+    fileInputElement?.click();
+  }
+
   const statusConfig = {
     'complete': { color: 'text-green-600', icon: '✓', label: 'Ready' },
     'missing-image': { color: 'text-red-600', icon: '✗', label: 'Missing Image' },
@@ -120,6 +123,8 @@
     ondrop={handleDrop}
     ondragover={handleDragOver}
     ondragleave={handleDragLeave}
+    onclick={openFileBrowser}
+    onkeydown={(e) => e.key === 'Enter' && openFileBrowser()}
     class="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors mb-4
       {isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'}"
   >
@@ -127,19 +132,19 @@
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
     </svg>
-    <p class="text-gray-600 font-medium mb-2">Drop files here or click to browse</p>
-    <p class="text-sm text-gray-400">Upload image and JSON application files</p>
-    <p class="text-xs text-gray-300 mt-2">Files must be named: <strong>name_image.ext</strong> and <strong>name_application.json</strong></p>
-
-    <input
-      type="file"
-      multiple
-      accept="image/*,.json"
-      onchange={handleFileInput}
-      class="hidden"
-      onclick={(e) => (e.target as HTMLInputElement).click()}
-    />
+    <p class="text-gray-900 font-medium mb-2">Drop files here or click to browse</p>
+    <p class="text-sm text-gray-700">Upload image and JSON application files</p>
+    <p class="text-xs text-gray-600 mt-2">Files must follow scheme: <strong>LABEL_NAME_image.ext</strong> and <strong>LABEL_NAME_application.json</strong></p>
   </div>
+
+  <input
+    bind:this={fileInputElement}
+    type="file"
+    multiple
+    accept="image/*,.json"
+    onchange={handleFileInput}
+    class="hidden"
+  />
 
   <!-- Pairs List -->
   {#if pairs.size > 0}
@@ -158,9 +163,13 @@
             <div class="flex gap-2 text-xs">
               {#if pair.imageFile}
                 <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded">Image ✓</span>
+              {:else}
+                <span class="px-2 py-1 bg-red-100 text-red-700 rounded">Image ✗</span>
               {/if}
               {#if pair.applicationFile}
                 <span class="px-2 py-1 bg-green-100 text-green-700 rounded">App ✓</span>
+              {:else}
+                <span class="px-2 py-1 bg-red-100 text-red-700 rounded">App ✗</span>
               {/if}
             </div>
           </div>

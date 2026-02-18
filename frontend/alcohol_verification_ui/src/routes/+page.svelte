@@ -1,17 +1,25 @@
 <script lang="ts">
   import PairUpload from '$lib/components/PairUpload.svelte';
   import ResultsViewer from '$lib/components/ResultsViewer.svelte';
-  import type { FilePair, VerificationResult } from '$lib/types';
+  import HistoryPanel from '$lib/components/HistoryPanel.svelte';
+  import type { FilePair, VerificationResult, VerificationBatch } from '$lib/types';
 
   let pairs = $state<FilePair[]>([]);
   let isProcessing = $state(false);
   let processedPairs = $state<FilePair[]>([]);
   let currentIndex = $state(0);
   let error = $state<string | null>(null);
+  let history = $state<VerificationBatch[]>([]);
+  let showHistory = $state(false);
+  let showWarning = $state(false);
+  let processingProgress = $state({ current: 0, total: 0 });
 
   let attribute_blur = 7;
   let background_opacity = 0.8;
   let background_size = 100;
+
+  const completePairsCount = $derived(pairs.filter(p => p.status === 'complete').length);
+  const incompletePairsCount = $derived(pairs.filter(p => p.status !== 'complete').length);
 
   function handlePairsUpdate(newPairs: FilePair[]) {
     pairs = newPairs;
@@ -26,9 +34,23 @@
       return;
     }
 
+    // Show warning if there are incomplete pairs
+    if (incompletePairsCount > 0) {
+      showWarning = true;
+      return;
+    }
+
+    await processVerification();
+  }
+
+  async function processVerification() {
+    showWarning = false;
+    const completePairs = pairs.filter(p => p.status === 'complete');
+    
     isProcessing = true;
     error = null;
     processedPairs = [];
+    processingProgress = { current: 0, total: completePairs.length };
 
     for (const pair of completePairs) {
       try {
@@ -61,7 +83,16 @@
           }
         });
       }
+
+      processingProgress.current++;
     }
+
+    // Add to history
+    history.push({
+      id: Date.now().toString(),
+      timestamp: new Date(),
+      pairs: [...processedPairs]
+    });
 
     isProcessing = false;
     currentIndex = 0;
@@ -72,6 +103,13 @@
     processedPairs = [];
     currentIndex = 0;
     error = null;
+    processingProgress = { current: 0, total: 0 };
+  }
+
+  function loadHistoryBatch(batch: VerificationBatch) {
+    processedPairs = batch.pairs;
+    currentIndex = 0;
+    showHistory = false;
   }
 
   function downloadTemplate() {
@@ -125,21 +163,40 @@
             <p class="text-blue-200 text-sm">Alcohol Beverage Label Compliance Tool</p>
           </div>
         </div>
-        <button
-          onclick={downloadTemplate}
-          class="flex items-center gap-2 px-4 py-2 bg-white text-blue-900 font-semibold rounded-lg hover:bg-blue-50 transition-colors shadow-sm"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-          Download Template
-        </button>
+        <div class="flex gap-3">
+          {#if history.length > 0}
+            <button
+              onclick={() => showHistory = !showHistory}
+              class="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors shadow-sm"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              History ({history.length})
+            </button>
+          {/if}
+          <button
+            onclick={downloadTemplate}
+            class="flex items-center gap-2 px-4 py-2 bg-white text-blue-900 font-semibold rounded-lg hover:bg-blue-50 transition-colors shadow-sm"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Download Template
+          </button>
+        </div>
       </div>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-6 py-8">
-    {#if processedPairs.length === 0}
+    {#if showHistory}
+      <HistoryPanel 
+        {history} 
+        onLoadBatch={loadHistoryBatch}
+        onClose={() => showHistory = false}
+      />
+    {:else if processedPairs.length === 0}
       <!-- Upload Section -->
       <div class="space-y-6">
         <section class="rounded-xl border border-white/40 p-6"
@@ -151,43 +208,48 @@
           "
         >
           <div class="mb-4">
-            <h2 class="text-lg font-semibold text-gray-800">Upload Labels & Applications</h2>
-            <p class="text-sm text-gray-600 mt-1">
-              Upload paired files: <code class="bg-gray-200 px-1 rounded">name_image.jpg</code> and <code class="bg-gray-200 px-1 rounded">name_application.json</code>
+            <h2 class="text-lg font-semibold text-gray-900">Upload Labels & Applications</h2>
+            <p class="text-sm text-gray-800 mt-1">
+              NAMING SCHEME: Upload paired files & replace LABEL_NAME with the label's name:
+              <code class="bg-gray-200 px-1 rounded">LABEL_NAME_image.jpg</code> 
+              and
+              <code class="bg-gray-50 px-1 rounded">LABEL_NAME_application.json</code>
             </p>
           </div>
 
           <PairUpload onPairsUpdate={handlePairsUpdate} />
         </section>
 
-        {#if pairs.length > 0}
-          <div class="flex gap-4">
-            <button
-              onclick={handleVerifyAll}
-              disabled={isProcessing || pairs.filter(p => p.status === 'complete').length === 0}
-              class="flex-1 py-4 px-6 bg-blue-800 hover:bg-blue-900 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-lg font-semibold rounded-xl transition-colors shadow-sm"
-            >
-              {#if isProcessing}
-                <span class="flex items-center justify-center gap-3">
-                  <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-                  </svg>
-                  Processing...
-                </span>
-              {:else}
-                Verify {pairs.filter(p => p.status === 'complete').length} Label(s)
-              {/if}
-            </button>
+        <!-- Always visible verify button -->
+        <div class="flex gap-4">
+          <button
+            onclick={handleVerifyAll}
+            disabled={isProcessing || completePairsCount === 0}
+            class="flex-1 py-4 px-6 bg-blue-800 hover:bg-blue-900 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-lg font-semibold rounded-xl transition-colors shadow-sm"
+          >
+            {#if isProcessing}
+              <span class="flex items-center justify-center gap-3">
+                <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                </svg>
+                Processing {processingProgress.current} of {processingProgress.total}...
+              </span>
+            {:else}
+              Verify {completePairsCount} Label{completePairsCount !== 1 ? 's' : ''}
+            {/if}
+          </button>
 
+          {#if pairs.length > 0}
             <button
               onclick={handleReset}
-              class="px-6 py-4 border-2 border-gray-400 hover:border-gray-600 text-gray-700 font-semibold rounded-xl transition-colors"
+              disabled={isProcessing}
+              class="px-6 py-4 border-2 border-gray-400 hover:border-gray-600 disabled:border-gray-300 text-gray-700 disabled:text-gray-400 font-semibold rounded-xl transition-colors"
             >
               Clear All
             </button>
-          </div>
-        {/if}
+          {/if}
+        </div>
 
         {#if error}
           <div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
@@ -205,3 +267,39 @@
     {/if}
   </main>
 </div>
+
+<!-- Warning Modal -->
+{#if showWarning}
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick={() => showWarning = false}>
+    <div class="bg-white rounded-lg p-6 max-w-md mx-4" onclick={(e) => e.stopPropagation()}>
+      <div class="flex items-start gap-4">
+        <div class="flex-shrink-0">
+          <svg class="w-12 h-12 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Incomplete Pairs Detected</h3>
+          <p class="text-sm text-gray-600 mb-4">
+            {incompletePairsCount} file pair{incompletePairsCount !== 1 ? 's are' : ' is'} missing either an image or application file. 
+            Only the {completePairsCount} complete pair{completePairsCount !== 1 ? 's' : ''} will be verified.
+          </p>
+          <div class="flex gap-3 justify-end">
+            <button
+              onclick={() => showWarning = false}
+              class="px-4 py-2 text-gray-700 hover:text-gray-900 font-semibold"
+            >
+              Cancel
+            </button>
+            <button
+              onclick={processVerification}
+              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+            >
+              Continue Anyway
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}

@@ -15,6 +15,7 @@ export interface FieldResult {
   expected: string;
   status: 'pass' | 'fail' | 'warning';
   note?: string;
+  overridden?: boolean;
 }
 
 export interface VerificationResult {
@@ -30,4 +31,10 @@ export interface FilePair {
   applicationData: ApplicationData | null;
   status: 'complete' | 'missing-image' | 'missing-application';
   result?: VerificationResult;
+}
+
+export interface VerificationBatch {
+  id: string;
+  timestamp: Date;
+  pairs: FilePair[];
 }

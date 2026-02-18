@@ -1,7 +1,8 @@
 <script lang="ts">
   import FieldResult from './FieldResult.svelte';
   import type { VerificationResult } from '$lib/types';
-  let { result }: { result: VerificationResult } = $props();
+
+  let { result, onFieldOverride }: { result: VerificationResult; onFieldOverride?: (index: number) => void } = $props();
 
   const statusConfig = {
     approved: {
@@ -49,8 +50,8 @@
   <!-- Field Results -->
   <div class="p-6 flex flex-col gap-3">
     <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Field-by-Field Results</h3>
-    {#each result.fields as field}
-      <FieldResult result={field} />
+    {#each result.fields as field, index}
+      <FieldResult result={field} onOverride={onFieldOverride ? () => onFieldOverride(index) : undefined} />
     {/each}
   </div>
 </div>
