@@ -90,8 +90,6 @@
   }
 
   function handleReset() {
-    console.log("Clearing pairs:", pairs.map(p => p.baseName));
-
     if (pairUploadRef) {
       pairs.forEach(p => pairUploadRef.removePair(p.baseName));
     }
@@ -162,7 +160,9 @@
 
         <!-- RIGHT SIDE -->
         <div class="flex items-center gap-3">
-          <button class="px-4 py-2 bg-white text-blue-900 font-semibold cursor-pointer rounded-lg hover:bg-blue-50 transition-colors shadow-sm">
+          <button 
+            onclick={handleReset}
+            class="px-4 py-2 bg-white text-blue-900 font-semibold cursor-pointer rounded-lg hover:bg-blue-50 transition-colors shadow-sm">
             New Verification
           </button>
 
