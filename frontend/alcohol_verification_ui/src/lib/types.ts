@@ -22,3 +22,12 @@ export interface VerificationResult {
   fields: FieldResult[];
   summary: string;
 }
+
+export interface FilePair {
+  baseName: string;
+  imageFile: File | null;
+  applicationFile: File | null;
+  applicationData: ApplicationData | null;
+  status: 'complete' | 'missing-image' | 'missing-application';
+  result?: VerificationResult;
+}
