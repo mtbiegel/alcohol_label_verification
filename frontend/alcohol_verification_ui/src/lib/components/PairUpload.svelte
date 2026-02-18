@@ -31,40 +31,71 @@
         continue;
       }
 
-      const oldPair = newPairs.get(baseName) ?? {
-        baseName,
-        imageFile: null,
-        applicationFile: null,
-        applicationData: null,
-        status: 'missing-application'
-      };
+      if (!newPairs.has(baseName)) {
+        newPairs.set(baseName, {
+          baseName,
+          imageFile: null,
+          applicationFile: null,
+          applicationData: null,
+          status: 'missing-application'
+        });
+      }
 
-      // Build a new pair object for reactivity
-      let imageFile = type === 'image' ? file : oldPair.imageFile;
-      let applicationFile = type === 'application' ? file : oldPair.applicationFile;
-      let applicationData = oldPair.applicationData;
+      const pair = newPairs.get(baseName)!;
 
-      if (type === 'application') {
+      if (type === 'image') {
+        pair.imageFile = file;
+      } else if (type === 'application') {
+        pair.applicationFile = file;
+        // Parse CSV file
         try {
           const text = await file.text();
-          applicationData = JSON.parse(text);
+          pair.applicationData = parseCSVFile(text);
         } catch (err) {
           console.error(`Failed to parse ${file.name}:`, err);
         }
       }
 
-      // Determine status
-      let status: FilePair['status'] = 'missing-application';
-      if (imageFile && applicationFile && applicationData) status = 'complete';
-      else if (!imageFile) status = 'missing-image';
-      else if (!applicationFile) status = 'missing-application';
+      // Update status
+      if (pair.imageFile && pair.applicationFile && pair.applicationData) {
+        pair.status = 'complete';
+      } else if (pair.imageFile && !pair.applicationFile) {
+        pair.status = 'missing-application';
+      } else if (!pair.imageFile && pair.applicationFile) {
+        pair.status = 'missing-image';
+      }
 
-      // Set the new pair object in the Map
-      newPairs.set(baseName, { baseName, imageFile, applicationFile, applicationData, status });
+      newPairs.set(baseName, pair);
     }
 
     pairs = newPairs;
     onPairsUpdate(Array.from(pairs.values()));
+  }
+
+  function parseCSVFile(csvText: string): ApplicationData {
+    const lines = csvText.trim().split('\n');
+    if (lines.length < 2) {
+      throw new Error('CSV file must have headers and at least one data row');
+    }
+
+    const headers = lines[0].split(',').map(h => h.trim());
+    const values = lines[1].split(',').map(v => v.trim());
+
+    const data: any = {};
+    headers.forEach((header, index) => {
+      data[header] = values[index] || '';
+    });
+
+    return {
+      brand_name: data.brand_name || '',
+      class_type: data.class_type || '',
+      alcohol_content_amount: data.alcohol_content_amount || '',
+      alcohol_content_format: data.alcohol_content_format || '%',
+      net_contents_amount: data.net_contents_amount || '',
+      net_contents_unit: data.net_contents_unit || 'mL',
+      producer_name: data.producer_name || '',
+      country_of_origin: data.country_of_origin || ''
+    };
   }
 
   function handleDrop(e: DragEvent) {
@@ -134,15 +165,15 @@
         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
     </svg>
     <p class="text-gray-900 font-medium mb-2">Drop files here or click to browse</p>
-    <p class="text-sm text-gray-700">Upload image and JSON application files</p>
-    <p class="text-xs text-gray-600 mt-2">Files must follow scheme: <strong>LABEL_NAME_image.ext</strong> and <strong>LABEL_NAME_application.json</strong></p>
+    <p class="text-sm text-gray-700">Upload image and CSV application files</p>
+    <p class="text-xs text-gray-600 mt-2">Files must follow scheme: <strong>LABEL_NAME_image.ext</strong> and <strong>LABEL_NAME_application.csv</strong></p>
   </div>
 
   <input
     bind:this={fileInputElement}
     type="file"
     multiple
-    accept="image/*,.json"
+    accept="image/*,.csv"
     onchange={handleFileInput}
     class="hidden"
   />

@@ -108,22 +108,14 @@
   }
 
   function downloadTemplate() {
-    const template = {
-      brand_name: "Midnight Ember",
-      class_type: "Smoky Bourbon Whiskey",
-      alcohol_content_amount: "47",
-      alcohol_content_format: "%",
-      net_contents_amount: "750",
-      net_contents_unit: "mL",
-      producer_name: "Midnight Ember Distillery",
-      country_of_origin: "USA"
-    };
+    const csv = `brand_name,class_type,alcohol_content_amount,alcohol_content_format,net_contents_amount,net_contents_unit,producer_name,country_of_origin
+    Midnight Ember,Smoky Bourbon Whiskey,47,%,750,mL,Midnight Ember Distillery,USA`;
 
-    const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' });
+    const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'example_application.json';
+    a.download = 'application_template.csv';
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -169,7 +161,7 @@
           <button 
             onclick={handleReset}
             class="px-4 py-2 bg-white text-blue-900 font-semibold cursor-pointer rounded-lg hover:bg-blue-50 transition-colors shadow-sm">
-            New Verification
+            Verify New Label
           </button>
 
           <button 
@@ -212,7 +204,7 @@
               NAMING SCHEME: Upload paired files & replace LABEL_NAME with the label's name:
               <code class="bg-gray-200 px-1 rounded">LABEL_NAME_image.ext</code> 
               and
-              <code class="bg-gray-50 px-1 rounded">LABEL_NAME_application.json</code>
+              <code class="bg-gray-50 px-1 rounded">LABEL_NAME_application.csv</code>
             </p>
           </div>
 
@@ -294,7 +286,7 @@
         <li>Proper File Naming Scheme</li>
         <p>
           Rename files such that the image file has LABEL_image.ext, replacing LABEL with a constant name, adding the "_image.ext" where .ext is the original image extension.
-          Repeat this process for the application file, replacing LABEL with the same constant name used on the image, adding the "_application.json" suffix.
+          Repeat this process for the application file, replacing LABEL with the same constant name used on the image, adding the "_application.csv" suffix.
           As a result, the image and application file pair have the same constant name you defined as the prefix with corresponding suffixes.
         </p>
         <br>

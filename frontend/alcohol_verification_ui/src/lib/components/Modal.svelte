@@ -35,6 +35,7 @@
     <div
       class="bg-white rounded-lg p-6 max-w-{modalSize} mx-4" 
       on:click|stopPropagation
+      on:keydown|stopPropagation
       role="document"
     >
       <div class="flex items-start gap-4">
@@ -51,9 +52,9 @@
         {/if}
         <div class="flex-1">
           <h3 id="modal-title" class="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-            <div class="text-sm text-gray-600 mb-4">
-              <slot />
-            </div>
+          <div class="text-sm text-gray-600 mb-4">
+            <slot />
+          </div>
           <div class="flex gap-3 justify-end">
             <button
               on:click={onCancel}
