@@ -3,7 +3,7 @@ import os
 import base64
 import json
 import re
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, RateLimitError
 from rapidfuzz import fuzz
 from dotenv import load_dotenv
 
@@ -60,7 +60,7 @@ async def extract_fields_with_vision(image_bytes, expected_values):
         "government_warning_present": True/False,
         "government_warning_all_caps": True/False,
         "government_warning_text": "full text if present, empty string if not",
-        "government_warning_matches": "True/False if the government_warning_all_caps is set to true and government_warning_text equals {GOV_WARNING_MAIN_STR}
+        "government_warning_matches": "True/False if the government_warning_all_caps is set to true and government_warning_text equals {GOV_WARNING_MAIN_STR}"
     }}
 
     If a field is not visible on the label, use an empty string.""")
@@ -88,17 +88,22 @@ async def extract_fields_with_vision(image_bytes, expected_values):
         result_text = result_text.replace('```json', '').replace('```', '').strip()
         extracted = json.loads(result_text)
         return extracted
-        
+
+    except RateLimitError:
+        raise  # Bubble up so process_batch.py retry logic can handle it
+    except json.JSONDecodeError as e:
+        print(f"Vision API JSON parse error: {e}\nRaw response: {result_text}")
+        return {
+            'brand_name': '', 'class_type': '', 'alcohol_content': '',
+            'net_contents': '', 'government_warning_present': False,
+            'government_warning_all_caps': False, 'government_warning_text': ''
+        }
     except Exception as e:
         print(f"Vision API error: {e}")
         return {
-            'brand_name': '',
-            'class_type': '',
-            'alcohol_content': '',
-            'net_contents': '',
-            'government_warning_present': False,
-            'government_warning_all_caps': False,
-            'government_warning_text': ''
+            'brand_name': '', 'class_type': '', 'alcohol_content': '',
+            'net_contents': '', 'government_warning_present': False,
+            'government_warning_all_caps': False, 'government_warning_text': ''
         }
 
 
@@ -110,7 +115,6 @@ def compare_brand_name(extracted: str, matches: bool, expected: str) -> tuple:
 
     # Overrule algorithm-based classification if it says it matches
     if matches:
-        print("AI SAYS BRAND NAME PASSES")
         return ('pass', None) 
     
     ext_norm = extracted.lower().strip()
@@ -142,7 +146,6 @@ def compare_class_type(extracted: str, matches: bool, expected: str) -> tuple:
 
     # Overrule algorithm-based classification if it says it matches
     if matches:
-        print("AI SAYS CLASS TYPE PASSES")
         return ('pass', None) 
     
     ext_norm = extracted.lower().strip()
@@ -172,7 +175,6 @@ def compare_alcohol_content(extracted: str, matches: bool, expected: str) -> tup
 
     # Overrule algorithm-based classification if it says it matches
     if matches:
-        print("AI SAYS ALCOHOL CONTENT PASSES")
         return ('pass', None) 
     
     ext_nums = re.findall(r'\d+\.?\d*', extracted)
@@ -207,7 +209,6 @@ def compare_net_contents(extracted: str, matches: bool, expected: str) -> tuple:
     
     # Overrule algorithm-based classification if it says it matches
     if matches:
-        print("AI SAYS NET CONTENTS PASSES")
         return ('pass', None) 
     
     ext_nums = re.findall(r'\d+\.?\d*', extracted)
@@ -238,7 +239,6 @@ def check_government_warning(warning_present: bool, warning_all_caps: bool, warn
         
     # Overrule algorithm-based classification if all of these are true
     if warning_all_caps and warning_text == GOV_WARNING_MAIN_STR and warning_matches:
-        print("AI SAYS GOV WARNING PASSES")
         return ('pass', None) 
 
     # Fuzzy match the actual warning text
