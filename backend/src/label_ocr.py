@@ -21,9 +21,33 @@ GOV_WARNING_STR = (
 
 # Spirit type vocabulary
 SPIRIT_TYPES = [
-    'whisky', 'whiskey', 'bourbon', 'vodka', 'rum', 'gin',
-    'tequila', 'brandy', 'rye', 'scotch', 'cognac', 'mezcal',
-    'brandy', 'liqueur', 'absinthe', 'vermouth', 'malt'
+    # Whiskies
+    'whisky', 'whiskey', 'bourbon', 'rye', 'scotch', 'malt',
+    
+    # White Spirits
+    'vodka', 'gin', 'tequila', 'mezcal', 'rum', 
+    'cachaca', 'pisco', 'soju', 'baijiu', 'shochu',
+    
+    # Brandies
+    'brandy', 'cognac', 'armagnac', 'calvados', 'grappa',
+    
+    # Liqueurs & Cordials
+    'liqueur', 'cordial', 'amaretto', 'schnapps', 
+    'sambuca', 'chartreuse', 'benedictine', 'drambuie',
+    'triple sec', 'curacao', 'limoncello',
+    
+    # Fortified Wines
+    'vermouth', 'sherry', 'port', 'madeira', 'marsala',
+    
+    # Other Spirits
+    'absinthe', 'aquavit', 'ouzo', 'arak', 'pastis', 'sake',
+    
+    # Beer (TTB regulates beer too)
+    'beer', 'ale', 'lager', 'stout', 'porter', 'pilsner',
+    'ipa', 'wheat beer', 'hefeweizen', 'saison', 'lambic',
+    
+    # Wine
+    'wine', 'champagne', 'cider', 'mead'
 ]
 
 # Descriptors that precede a spirit type
@@ -45,6 +69,30 @@ NOT_BRAND_WORDS = [
     *SPIRIT_TYPES,
     *SPIRIT_DESCRIPTORS
 ]
+
+def preprocess_image_for_ocr(img):
+    """Improve image quality for OCR"""
+    # Convert to grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # Denoise
+    denoised = cv2.fastNlMeansDenoising(gray, None, 10, 7, 21)
+    
+    # Increase contrast using CLAHE
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    contrast = clahe.apply(denoised)
+    
+    # Sharpen
+    kernel = np.array([[-1,-1,-1],
+                       [-1, 9,-1],
+                       [-1,-1,-1]])
+    sharpened = cv2.filter2D(contrast, -1, kernel)
+    
+    # Threshold to clean binary image
+    _, binary = cv2.threshold(sharpened, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    # Convert back to BGR for PaddleOCR
+    return cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
 
 def sort_text(results, img_width: int, img_height: int) -> tuple[list, int | None]:
     """
@@ -296,20 +344,32 @@ def classify_class_type(text_list: list) -> str:
     """
     text_lower_list = [t.lower().strip() for t in text_list]
 
+    print()
+    print("HERE:")
+    print(text_lower_list)
+    print()
+
     # Find all spirit keyword positions
-    spirit_positions = [
-        i for i, t in enumerate(text_lower_list)
-        if t in SPIRIT_TYPES
-    ]
+    # spirit_positions = [
+    #     i for i, t in enumerate(text_lower_list)
+    #     if t in SPIRIT_TYPES
+    # ]
+    spirit_positions = []
+    for i in range(len(text_lower_list)):
+        if text_lower_list[i] in SPIRIT_TYPES:
+            spirit_positions.append(i)
 
+    print('test1')
     if not spirit_positions:
+        print("IN HEREEEEEEEEEE")
         return ""
-
     # For each spirit keyword found, collect surrounding context
     # Take the one with the most descriptor context (most complete type string)
     best_result = ""
 
+    print("SPIRIT POS:", spirit_positions)
     for spirit_idx in spirit_positions:
+        print("FOR LOOP")
         parts = []
 
         # Look back up to 4 words for descriptors
@@ -335,8 +395,12 @@ def classify_class_type(text_list: list) -> str:
 
         # Keep the most descriptive result
         if len(candidate) > len(best_result):
+            print("IN IF")
             best_result = candidate
-
+        else:
+            print("IN ELSE")
+    
+    print("BESTTTTTTTTTTT:", best_result)
     return best_result
 
 def classify_alcohol_content(text_list: list) -> str:
@@ -417,11 +481,20 @@ def verify_label(model, image_bytes, application_data):
     np_img_arr = np.frombuffer(image_bytes, np.uint8)
     img = cv2.imdecode(np_img_arr, cv2.IMREAD_COLOR)
 
+    img = preprocess_image_for_ocr(img)
+
     # Run paddleOCR
     results = process_image_ocr(model, img)
 
     # Sort output from paddleOCR so text is in reading order
     text_result_list, best_split = sort_text(results, img.shape[1], img.shape[0])
+
+    print("=" * 60)
+    print("RAW OCR OUTPUT:")
+    print("=" * 60)
+    for i, text in enumerate(text_result_list):
+        print(f"[{i:02d}] {text}")
+    print("=" * 60)
 
     # ── Run classifiers ──
     extracted_brand = classify_brand_name(text_result_list, results, best_split)
