@@ -2,26 +2,37 @@
   import FieldResult from './FieldResult.svelte';
   import type { VerificationResult } from '$lib/types';
 
-  let { result, onFieldOverride }: { result: VerificationResult; onFieldOverride?: (index: number) => void } = $props();
+  let { 
+    result, 
+    onFieldOverride,
+    onDownloadAll
+  }: { 
+    result: VerificationResult; 
+    onFieldOverride?: (index: number) => void;
+    onDownloadAll?: () => void;
+  } = $props();
 
   const statusConfig = {
     approved: {
       bg: 'bg-green-600',
       label: 'APPROVED',
       description: 'All fields match the application data.',
-      icon: '✓'
+      icon: '✓',
+      text: "text-green-600"
     },
     rejected: {
       bg: 'bg-red-600',
       label: 'REJECTED',
       description: 'One or more fields failed verification.',
-      icon: '✗'
+      icon: '✗',
+      text: "text-red-600"
     },
     review: {
       bg: 'bg-yellow-500',
       label: 'NEEDS REVIEW',
       description: 'Some fields require manual review.',
-      icon: '⚠'
+      icon: '⚠',
+      text: "text-yellow-600"
     }
   };
 
@@ -31,12 +42,28 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
   <!-- Status Banner -->
   <div class="px-6 py-5 {config.bg} text-white">
-    <div class="flex items-center gap-3">
-      <span class="text-3xl font-bold">{config.icon}</span>
-      <div>
-        <h2 class="text-2xl font-bold tracking-wide">{config.label}</h2>
-        <p class="text-sm opacity-90 mt-0.5">{config.description}</p>
+    <div class="flex items-center justify-between">
+
+      <!-- LEFT SIDE -->
+      <div class="flex items-center gap-3">
+        <span class="text-3xl font-bold">{config.icon}</span>
+        <div>
+          <h2 class="text-2xl font-bold tracking-wide">{config.label}</h2>
+          <p class="text-sm opacity-90 mt-0.5">{config.description}</p>
+        </div>
       </div>
+
+      <!-- RIGHT SIDE -->
+      {#if onDownloadAll}
+      
+        <button
+          onclick={onDownloadAll}
+          class="px-5 py-2 bg-gray-100 {config.text} backdrop-blur font-semibold rounded-lg transition-colors"
+        >
+          Download Results as CSV
+        </button>
+      {/if}
+
     </div>
   </div>
 
@@ -49,9 +76,15 @@
 
   <!-- Field Results -->
   <div class="p-6 flex flex-col gap-3">
-    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Field-by-Field Results</h3>
+    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">
+      Field-by-Field Results
+    </h3>
+
     {#each result.fields as field, index}
-      <FieldResult result={field} onOverride={onFieldOverride ? () => onFieldOverride(index) : undefined} />
+      <FieldResult
+        result={field}
+        onOverride={onFieldOverride ? () => onFieldOverride(index) : undefined}
+      />
     {/each}
   </div>
 </div>

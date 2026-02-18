@@ -21,3 +21,7 @@ body {
 .button-blur:hover {
   background-color: #f0f0f0 !important;
 }
+
+.question-mark-svg-icon {
+  background-image: url(../static/question-mark-icon.svg)
+}

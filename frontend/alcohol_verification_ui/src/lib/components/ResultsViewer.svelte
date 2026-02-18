@@ -139,22 +139,10 @@
 
   <!-- Current Result -->
   {#if currentPair.result}
-    <ResultsPanel result={currentPair.result} onFieldOverride={handleFieldOverride} />
+    <ResultsPanel
+      result={currentPair.result}
+      onFieldOverride={handleFieldOverride}
+      onDownloadAll={downloadAllResults}
+    />
   {/if}
-
-  <!-- Actions -->
-  <div class="flex gap-4">
-    <button
-      onclick={downloadAllResults}
-      class="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
-    >
-      Download All Results (CSV)
-    </button>
-    <button
-      onclick={onReset}
-      class="px-6 py-3 border-2 border-gray-400 hover:border-gray-600 text-gray-700 font-semibold rounded-lg transition-colors"
-    >
-      Verify New Labels
-    </button>
-  </div>
 </div>

@@ -1,7 +1,6 @@
 <script lang="ts">
   import PairUpload from '$lib/components/PairUpload.svelte';
   import ResultsViewer from '$lib/components/ResultsViewer.svelte';
-  import HistoryPanel from '$lib/components/HistoryPanel.svelte';
   import type { FilePair, VerificationResult, VerificationBatch } from '$lib/types';
 
   let pairs = $state<FilePair[]>([]);
@@ -9,8 +8,6 @@
   let processedPairs = $state<FilePair[]>([]);
   let currentIndex = $state(0);
   let error = $state<string | null>(null);
-  let history = $state<VerificationBatch[]>([]);
-  let showHistory = $state(false);
   let showWarning = $state(false);
   let processingProgress = $state({ current: 0, total: 0 });
 
@@ -86,14 +83,6 @@
 
       processingProgress.current++;
     }
-
-    // Add to history
-    history.push({
-      id: Date.now().toString(),
-      timestamp: new Date(),
-      pairs: [...processedPairs]
-    });
-
     isProcessing = false;
     currentIndex = 0;
   }
@@ -104,12 +93,6 @@
     currentIndex = 0;
     error = null;
     processingProgress = { current: 0, total: 0 };
-  }
-
-  function loadHistoryBatch(batch: VerificationBatch) {
-    processedPairs = batch.pairs;
-    currentIndex = 0;
-    showHistory = false;
   }
 
   function downloadTemplate() {
@@ -148,10 +131,11 @@
     "
   ></div>
 
-  <!-- Header -->
   <header class="bg-blue-900 text-white shadow-lg">
     <div class="max-w-7xl mx-auto px-6 py-4">
       <div class="flex items-center justify-between">
+
+        <!-- LEFT SIDE -->
         <div class="flex items-center gap-4">
           <div class="bg-white rounded p-1">
             <svg class="w-8 h-8 text-blue-900" fill="currentColor" viewBox="0 0 24 24">
@@ -159,44 +143,43 @@
             </svg>
           </div>
           <div>
-            <h1 class="text-xl font-bold tracking-wide">TTB Label Verification</h1>
-            <p class="text-blue-200 text-sm">Alcohol Beverage Label Compliance Tool</p>
+            <h1 class="text-xl font-bold tracking-wide">
+              TTB Label Verification
+            </h1>
+            <p class="text-blue-200 text-sm">
+              Alcohol Beverage Label Compliance Tool
+            </p>
           </div>
         </div>
-        <div class="flex gap-3">
-          {#if history.length > 0}
-            <button
-              onclick={() => showHistory = !showHistory}
-              class="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors shadow-sm"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-              History ({history.length})
-            </button>
-          {/if}
+
+        <!-- RIGHT SIDE -->
+        <div class="flex items-center gap-3">
+          <button class="px-4 py-2 bg-white text-blue-900 font-semibold cursor-pointer rounded-lg hover:bg-blue-50 transition-colors shadow-sm">
+            New Verification
+          </button>
+
+          <button class="px-4 py-2 bg-white text-blue-900 font-semibold cursor-pointer rounded-lg hover:bg-blue-50 transition-colors shadow-sm">
+            How it works
+          </button>
+
           <button
             onclick={downloadTemplate}
-            class="flex items-center gap-2 px-4 py-2 bg-white text-blue-900 font-semibold rounded-lg hover:bg-blue-50 transition-colors shadow-sm"
+            class="flex items-center gap-2 px-4 py-2 bg-white cursor-pointer text-blue-900 font-semibold rounded-lg hover:bg-blue-50 transition-colors shadow-sm"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
             Download Template
           </button>
         </div>
+
       </div>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-6 py-8">
-    {#if showHistory}
-      <HistoryPanel 
-        {history} 
-        onLoadBatch={loadHistoryBatch}
-        onClose={() => showHistory = false}
-      />
-    {:else if processedPairs.length === 0}
+    {#if processedPairs.length === 0}
       <!-- Upload Section -->
       <div class="space-y-6">
         <section class="rounded-xl border border-white/40 p-6"
@@ -233,7 +216,7 @@
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                 </svg>
-                Processing {processingProgress.current} of {processingProgress.total}...
+                Processing {processingProgress.total} labels...
               </span>
             {:else}
               Verify {completePairsCount} Label{completePairsCount !== 1 ? 's' : ''}
@@ -270,18 +253,23 @@
 
 <!-- Warning Modal -->
 {#if showWarning}
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick={() => showWarning = false}>
+  <div
+    class="fixed inset-0 flex items-center justify-center z-50 bg-white/0 backdrop-blur-sm"
+    style="background-color: rgba(255, 255, 255, 0.2);" 
+    onclick={() => showWarning = false}
+  >
     <div class="bg-white rounded-lg p-6 max-w-md mx-4" onclick={(e) => e.stopPropagation()}>
       <div class="flex items-start gap-4">
         <div class="flex-shrink-0">
           <svg class="w-12 h-12 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
           </svg>
         </div>
         <div class="flex-1">
           <h3 class="text-lg font-semibold text-gray-900 mb-2">Incomplete Pairs Detected</h3>
           <p class="text-sm text-gray-600 mb-4">
-            {incompletePairsCount} file pair{incompletePairsCount !== 1 ? 's are' : ' is'} missing either an image or application file. 
+            {incompletePairsCount} file pair{incompletePairsCount !== 1 ? 's are' : ' is'} missing (either an image or application file). 
             Only the {completePairsCount} complete pair{completePairsCount !== 1 ? 's' : ''} will be verified.
           </p>
           <div class="flex gap-3 justify-end">

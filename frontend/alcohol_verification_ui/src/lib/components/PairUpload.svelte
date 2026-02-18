@@ -31,40 +31,36 @@
         continue;
       }
 
-      if (!newPairs.has(baseName)) {
-        newPairs.set(baseName, {
-          baseName,
-          imageFile: null,
-          applicationFile: null,
-          applicationData: null,
-          status: 'missing-application'
-        });
-      }
+      const oldPair = newPairs.get(baseName) ?? {
+        baseName,
+        imageFile: null,
+        applicationFile: null,
+        applicationData: null,
+        status: 'missing-application'
+      };
 
-      const pair = newPairs.get(baseName)!;
+      // Build a new pair object for reactivity
+      let imageFile = type === 'image' ? file : oldPair.imageFile;
+      let applicationFile = type === 'application' ? file : oldPair.applicationFile;
+      let applicationData = oldPair.applicationData;
 
-      if (type === 'image') {
-        pair.imageFile = file;
-      } else if (type === 'application') {
-        pair.applicationFile = file;
+      if (type === 'application') {
         try {
           const text = await file.text();
-          pair.applicationData = JSON.parse(text);
+          applicationData = JSON.parse(text);
         } catch (err) {
           console.error(`Failed to parse ${file.name}:`, err);
         }
       }
 
-      // Update status
-      if (pair.imageFile && pair.applicationFile && pair.applicationData) {
-        pair.status = 'complete';
-      } else if (pair.imageFile && !pair.applicationFile) {
-        pair.status = 'missing-application';
-      } else if (!pair.imageFile && pair.applicationFile) {
-        pair.status = 'missing-image';
-      }
+      // Determine status
+      let status: FilePair['status'] = 'missing-application';
+      if (imageFile && applicationFile && applicationData) status = 'complete';
+      else if (!imageFile) status = 'missing-image';
+      else if (!applicationFile) status = 'missing-application';
 
-      newPairs.set(baseName, pair);
+      // Set the new pair object in the Map
+      newPairs.set(baseName, { baseName, imageFile, applicationFile, applicationData, status });
     }
 
     pairs = newPairs;
