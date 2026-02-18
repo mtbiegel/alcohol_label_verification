@@ -149,17 +149,17 @@
 
         <!-- LEFT SIDE -->
         <div class="flex items-center gap-4">
-          <div class="bg-white rounded p-1">
-            <svg class="w-8 h-8 text-blue-900" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
+          <div class="rounded p-1">
+            <img src="/treasury_logo.svg" alt="Treasury Logo" width="80" height="80">
           </div>
           <div>
             <h1 class="text-xl font-bold tracking-wide">
-              TTB Label Verification
+              ProofCheck™
             </h1>
             <p class="text-blue-200 text-sm">
               Alcohol Beverage Label Compliance Tool
+              <br>
+              by the U.S. Alcohol and Tobacco Tax and Trade Bureau
             </p>
           </div>
         </div>
@@ -175,7 +175,7 @@
           <button 
             onclick={openHelp}
             class="px-4 py-2 bg-white text-blue-900 font-semibold cursor-pointer rounded-lg hover:bg-blue-50 transition-colors shadow-sm">
-            How it works
+            Using ProofCheck™
           </button>
 
           <button
@@ -210,7 +210,7 @@
             <h2 class="text-lg font-semibold text-gray-900">Upload Labels & Applications</h2>
             <p class="text-sm text-gray-800 mt-1">
               NAMING SCHEME: Upload paired files & replace LABEL_NAME with the label's name:
-              <code class="bg-gray-200 px-1 rounded">LABEL_NAME_image.jpg</code> 
+              <code class="bg-gray-200 px-1 rounded">LABEL_NAME_image.ext</code> 
               and
               <code class="bg-gray-50 px-1 rounded">LABEL_NAME_application.json</code>
             </p>
@@ -272,50 +272,76 @@
 
     <Modal
       show={showHelp}
-      title="Need Help?"
-      message="Here is some helpful information about how to use this feature."
+      title="How to use the ProofCheck™"
+      cancelText = "Close"
       onCancel={() => showHelp = false}
-    />
+      modalSize="4xl"
+    >
+      <h1 class="font-bold"> About</h1>
+      <p>
+        This app helps government workers determine if alcohol beverage labels meet regulations set by the Alcohol and Tobacco Tax and Trade Bureau (TTB).
+        It allows workers to quickly verify labels match corresponding application information and meet requirements.
+      </p>
+      <br>
+      <h1 class="font-bold"> How to use </h1>
+      <ol class="list-decimal list-inside">
+        <li>Download Application Template:</li>
+        <p>
+          Download the application template from the button in the top right corner. Use this template as the starting point for bottlers and producers to input data; this way, data can easily be loaded into the ProofCheck™.
+          Once the information is populated into the CSV fields, follow the next step for file naming scheme.
+        </p>
+        <br>
+        <li>Proper File Naming Scheme</li>
+        <p>
+          Rename files such that the image file has LABEL_image.ext, replacing LABEL with a constant name, adding the "_image.ext" where .ext is the original image extension.
+          Repeat this process for the application file, replacing LABEL with the same constant name used on the image, adding the "_application.json" suffix.
+          As a result, the image and application file pair have the same constant name you defined as the prefix with corresponding suffixes.
+        </p>
+        <br>
+        <li>Upload Image & Application Pair</li>
+        <p>
+          There are 2 methods to upload image and application pairs: You can drag and drop the image and application pair into the drop zone, or you can click the upload box and browse for image and applicaiton pair through the OS.
+          Once you select a pair, it will show up in the "Uploaded Pairs" section and tell you if the pair is ready for valdiating or if it is missing an entry (i.e missing the image or the application).
+        </p>
+        <br>
+        <li>Run Validation</li>
+        <p>
+          Once you have valid pair(s), click the "Verify" button at the bottom of the webpage. The processing will start and route you to the Results page once completed. Each pair validation takes approximately 5 seconds to complete.
+          The UI will let you know of any invalid pairs. Clicking the "Verify" button will prompt you with a warning that a pair(s) is incomplete. Incomplete pairs will not be processed.
+        </p>
+        <br>
+        <li>Results & Downloadables</li>
+          Once pair(s) have been processed and redirected to the Results page, there will be the following attributes: Count for total, approved, needs-review, and rejected categories.
+          Below that is the individual hueristcs of the processed pairs with more detail about the results; next to that is an image preview of the label you are observing.
+          You are able to toggle through all the pair results if you uploaded multiple pairs.
+          You are able to download the hueristics from this validation run with the "Download Results as CSV" button.
+          If you uploaded multiple pairs, you will see a progress bar at the top of this page showing how many pairs are still processing.
+      </ol>
+    </Modal>
   </main>
 </div>
 
 <!-- Warning Modal -->
-{#if showWarning}
-  <div
-    class="fixed inset-0 flex items-center justify-center z-50 bg-white/0 backdrop-blur-sm"
-    style="background-color: rgba(255, 255, 255, 0.2);" 
-    onclick={() => showWarning = false}
-  >
-    <div class="bg-white rounded-lg p-6 max-w-md mx-4" onclick={(e) => e.stopPropagation()}>
-      <div class="flex items-start gap-4">
-        <div class="flex-shrink-0">
-          <svg class="w-12 h-12 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-          </svg>
-        </div>
-        <div class="flex-1">
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">Incomplete Pairs Detected</h3>
-          <p class="text-sm text-gray-600 mb-4">
-            {incompletePairsCount} file pair{incompletePairsCount !== 1 ? 's are' : ' is'} missing (either an image or application file). 
-            Only the {completePairsCount} complete pair{completePairsCount !== 1 ? 's' : ''} will be verified.
-          </p>
-          <div class="flex gap-3 justify-end">
-            <button
-              onclick={() => showWarning = false}
-              class="px-4 py-2 text-gray-700 hover:text-gray-900 font-semibold"
-            >
-              Cancel
-            </button>
-            <button
-              onclick={processVerification}
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-            >
-              Continue Anyway
-            </button>
-          </div>
-        </div>
-      </div>
+ <Modal
+  show={showWarning}
+  title=""
+  onConfirm={processVerification}
+  modalSize="sm"
+  confirmText="Continue Anyway"
+>
+  <div class="flex items-start gap-4">
+    <div class="flex-shrink-0">
+      <svg class="w-12 h-12 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+    </div>
+    <div class="flex-1">
+      <h3 class="text-lg font-semibold text-gray-900 mb-2">Incomplete Pairs Detected</h3>
+      <p class="text-sm text-gray-600 mb-4">
+        {incompletePairsCount} file pair{incompletePairsCount !== 1 ? 's are' : ' is'} missing (either an image or application file). 
+        Only the {completePairsCount} complete pair{completePairsCount !== 1 ? 's' : ''} will be verified.
+      </p>
     </div>
   </div>
-{/if}
+</Modal>

@@ -165,11 +165,35 @@
   </div>
 
   <!-- Current Result -->
-  {#if currentPair.result}
-    <ResultsPanel
-      result={currentPair.result}
-      onFieldOverride={handleFieldOverride}
-      onDownloadAll={downloadAllResults}
-    />
-  {/if}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Left: Results -->
+    <div>
+      {#if currentPair.result}
+        <ResultsPanel result={currentPair.result} onFieldOverride={handleFieldOverride} />
+      {/if}
+    </div>
+
+    <!-- Right: Image Preview -->
+    <div class="rounded-xl border border-white/40 p-6"
+      style="
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.8);
+      "
+    >
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">Label Image</h3>
+      {#if currentPair.imageFile}
+        <img
+          src={URL.createObjectURL(currentPair.imageFile)}
+          alt="{currentPair.baseName} label"
+          class="w-full h-auto rounded-lg border border-gray-200 shadow-sm"
+        />
+      {:else}
+        <div class="flex items-center justify-center h-64 bg-gray-100 rounded-lg">
+          <p class="text-gray-400">No image available</p>
+        </div>
+      {/if}
+    </div>
+  </div>
 </div>
