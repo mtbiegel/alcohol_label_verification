@@ -1,6 +1,7 @@
 <script lang="ts">
   import PairUpload from '$lib/components/PairUpload.svelte';
   import ResultsViewer from '$lib/components/ResultsViewer.svelte';
+  import Modal from '$lib/components/Modal.svelte'
   import type { FilePair, VerificationResult, VerificationBatch } from '$lib/types';
 
   let pairs = $state<FilePair[]>([]);
@@ -9,6 +10,7 @@
   let currentIndex = $state(0);
   let error = $state<string | null>(null);
   let showWarning = $state(false);
+  let showHelp = $state(false);
   let processingProgress = $state({ current: 0, total: 0 });
 
   let attribute_blur = 7;
@@ -40,6 +42,10 @@
     }
 
     await processVerification();
+  }
+
+  function openHelp() {
+    showHelp = true;
   }
 
   async function processVerification() {
@@ -166,7 +172,9 @@
             New Verification
           </button>
 
-          <button class="px-4 py-2 bg-white text-blue-900 font-semibold cursor-pointer rounded-lg hover:bg-blue-50 transition-colors shadow-sm">
+          <button 
+            onclick={openHelp}
+            class="px-4 py-2 bg-white text-blue-900 font-semibold cursor-pointer rounded-lg hover:bg-blue-50 transition-colors shadow-sm">
             How it works
           </button>
 
@@ -228,7 +236,7 @@
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                 </svg>
-                Processing {processingProgress.total} labels...
+                Processing {processingProgress.total} label{processingProgress.total !== 1 ? 's' : ''}...
               </span>
             {:else}
               Verify {completePairsCount} Label{completePairsCount !== 1 ? 's' : ''}
@@ -258,8 +266,16 @@
         pairs={processedPairs} 
         bind:currentIndex={currentIndex}
         onReset={handleReset}
+        processingProgress={isProcessing ? processingProgress : null}
       />
     {/if}
+
+    <Modal
+      show={showHelp}
+      title="Need Help?"
+      message="Here is some helpful information about how to use this feature."
+      onCancel={() => showHelp = false}
+    />
   </main>
 </div>
 

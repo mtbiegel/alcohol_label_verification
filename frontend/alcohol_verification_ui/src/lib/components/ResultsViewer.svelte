@@ -5,11 +5,13 @@
   let { 
     pairs,
     currentIndex = $bindable(),
-    onReset
+    onReset,
+    processingProgress = null  // Add this
   }: { 
     pairs: FilePair[],
     currentIndex: number,
-    onReset: () => void
+    onReset: () => void,
+    processingProgress?: { current: number; total: number } | null  // Add this
   } = $props();
 
   const currentPair = $derived(pairs[currentIndex]);
@@ -72,6 +74,31 @@
 </script>
 
 <div class="space-y-6">
+  {#if processingProgress && processingProgress.current < processingProgress.total}
+    <div class="rounded-xl border border-white/40 p-4 bg-blue-50"
+      style="backdrop-filter: blur(16px);"
+    >
+      <div class="flex items-center gap-3">
+        <svg class="animate-spin h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+        </svg>
+        <div class="flex-1">
+          <p class="text-sm font-semibold text-blue-900">Processing Labels...</p>
+          <p class="text-xs text-blue-700">{processingProgress.current} of {processingProgress.total} complete</p>
+        </div>
+        <div class="text-right">
+          <p class="text-2xl font-bold text-blue-900">{Math.round((processingProgress.current / processingProgress.total) * 100)}%</p>
+        </div>
+      </div>
+      <div class="mt-2 w-full bg-blue-200 rounded-full h-2">
+        <div 
+          class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+          style="width: {(processingProgress.current / processingProgress.total) * 100}%"
+        ></div>
+      </div>
+    </div>
+  {/if}
   <!-- Summary Stats -->
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
     <div class="rounded-xl border border-white/40 p-4 text-center"

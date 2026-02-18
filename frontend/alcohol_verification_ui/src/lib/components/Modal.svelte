@@ -1,35 +1,55 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  const dispatch = createEventDispatcher();
-
-  export let open = false;
-  export let title = "Modal Title";
+  export let show = false; // controls visibility
+  export let title: string;
+  export let message: string;
+  export let icon: any = null; // optional SVG or component
+  export let onCancel: () => void = () => {};
+  export let onConfirm: (() => void) | null = null;
+  export let confirmText: string = "OK";
+  export let cancelText: string = "Cancel";
 </script>
 
-{#if open}
+{#if show}
   <div
-    class="fixed inset-0 flex items-center justify-center z-50"
-    style="background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);"
+    class="fixed inset-0 flex items-center justify-center z-50 bg-white/0 backdrop-blur-sm"
+    style="background-color: rgba(255, 255, 255, 0.2);" 
+    on:click={onCancel}
   >
-    <!-- Modal panel -->
-    <div
-      class="bg-white rounded-xl shadow-2xl w-11/12 max-w-lg p-6 relative"
-      style="backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);"
-    >
-      <!-- Close button -->
-      <button
-        class="absolute top-3 right-3 text-gray-400 hover:text-gray-700"
-        on:click={() => dispatch('close')}
-      >
-        &times;
-      </button>
+    <div class="bg-white rounded-lg p-6 max-w-md mx-4" on:click|stopPropagation>
+      <div class="flex items-start gap-4">
+        {#if icon}
+          <div class="flex-shrink-0">
+            {#if typeof icon === "string"}
+              {@html icon} <!-- raw SVG string if passed -->
+            {:else}
+              {#await icon}
+                <span>Loading icon...</span>
+              {/await}
+            {/if}
+          </div>
+        {/if}
 
-      <!-- Title -->
-      <h2 class="text-xl font-semibold mb-4 text-gray-800">{title}</h2>
+        <div class="flex-1">
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+          <p class="text-sm text-gray-600 mb-4">{message}</p>
+          <div class="flex gap-3 justify-end">
+            <button
+              on:click={onCancel}
+              class="px-4 py-2 text-gray-700 hover:text-gray-900 font-semibold"
+            >
+              {cancelText}
+            </button>
 
-      <!-- Slot for content -->
-      <div class="text-gray-700 text-sm space-y-2">
-        <slot></slot>
+            {#if onConfirm}
+              <button
+                on:click={onConfirm}
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                {confirmText}
+              </button>
+            {/if}
+          </div>
+        </div>
       </div>
     </div>
   </div>
