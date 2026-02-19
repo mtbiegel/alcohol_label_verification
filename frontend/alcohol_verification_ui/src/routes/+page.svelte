@@ -160,19 +160,25 @@
         <div class="flex items-center gap-3">
           <button 
             onclick={handleReset}
-            class="px-4 py-2 bg-white text-blue-900 font-semibold cursor-pointer rounded-lg hover:bg-blue-50 transition-colors shadow-sm">
+            class="flex items-center px-4 py-2 bg-white text-blue-900 font-semibold cursor-pointer rounded-lg hover:bg-blue-200 transition-colors shadow-sm">
+            
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="12" y1="8" x2="12" y2="16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="8" y1="12" x2="16" y2="12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
             Verify New Label
           </button>
 
           <button 
             onclick={openHelp}
-            class="px-4 py-2 bg-white text-blue-900 font-semibold cursor-pointer rounded-lg hover:bg-blue-50 transition-colors shadow-sm">
+            class="px-4 py-2 bg-white text-blue-900 font-semibold cursor-pointer rounded-lg hover:bg-blue-200 transition-colors shadow-sm">
             Using ProofCheck™
           </button>
 
           <button
             onclick={downloadTemplate}
-            class="flex items-center gap-2 px-4 py-2 bg-white cursor-pointer text-blue-900 font-semibold rounded-lg hover:bg-blue-50 transition-colors shadow-sm"
+            class="flex items-center gap-2 px-4 py-2 bg-white cursor-pointer text-blue-900 font-semibold rounded-lg hover:bg-blue-200 transition-colors shadow-sm"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -306,7 +312,7 @@
           Once pair(s) have been processed and redirected to the Results page, there will be the following attributes: Count for total, approved, needs-review, and rejected categories.
           Below that is the individual hueristcs of the processed pairs with more detail about the results; next to that is an image preview of the label you are observing.
           You are able to toggle through all the pair results if you uploaded multiple pairs.
-          You are able to download the hueristics from this validation run with the "Download Results as CSV" button.
+          You are able to download the hueristics from this validation run with the "Download All Results as CSV" button.
           If you uploaded multiple pairs, you will see a progress bar at the top of this page showing how many pairs are still processing.
       </ol>
     </Modal>
@@ -318,7 +324,7 @@
   show={showWarning}
   title=""
   onConfirm={processVerification}
-  onCancel={() => showHelp = false}
+  onCancel={() => showWarning = false}
   modalSize="sm"
   confirmText="Continue Anyway"
 >

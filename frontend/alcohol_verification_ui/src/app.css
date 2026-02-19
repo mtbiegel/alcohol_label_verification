@@ -1,3 +1,6 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+
 body {
   background-color: rgb(249 250 251); /* same as bg-gray-50 */
 }
@@ -24,4 +27,10 @@ body {
 
 .question-mark-svg-icon {
   background-image: url(../static/question-mark-icon.svg)
+}
+
+@reference "tailwindcss";
+
+.button-transparency {
+  @apply flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-md hover:bg-white/30 text-gray-800 font-semibold rounded-lg transition-colors shadow-md cursor-pointer
 }

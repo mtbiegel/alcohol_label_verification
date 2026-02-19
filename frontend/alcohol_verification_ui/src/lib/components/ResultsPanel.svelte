@@ -5,11 +5,9 @@
   let { 
     result, 
     onFieldOverride,
-    onDownloadAll
   }: { 
     result: VerificationResult; 
     onFieldOverride?: (index: number) => void;
-    onDownloadAll?: () => void;
   } = $props();
 
   const statusConfig = {
@@ -52,18 +50,6 @@
           <p class="text-sm opacity-90 mt-0.5">{config.description}</p>
         </div>
       </div>
-
-      <!-- RIGHT SIDE -->
-      {#if onDownloadAll}
-      
-        <button
-          onclick={onDownloadAll}
-          class="px-5 py-2 bg-gray-100 {config.text} backdrop-blur font-semibold rounded-lg transition-colors"
-        >
-          Download Results as CSV
-        </button>
-      {/if}
-
     </div>
   </div>
 

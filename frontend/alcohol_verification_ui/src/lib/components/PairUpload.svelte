@@ -268,16 +268,23 @@
   icon={`<svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
   </svg>`}
-  onCancel={() => showRejectedFilesModal = false}
   confirmText="OK"
+  cancelText=""
+  modalSize="lg"
+  onCancel={() => showRejectedFilesModal = false}
   onConfirm={() => showRejectedFilesModal = false}
 >
-  <p class="mb-3">The following files were rejected:</p>
+  <p class="mb-3">The following files were rejected due to a mismatch:</p>
   <ul class="list-disc pl-5 space-y-1 mb-3 max-h-48 overflow-y-auto">
     {#each rejectedFilesList as file}
       <li class="text-sm text-gray-700">{file}</li>
     {/each}
   </ul>
+  <p class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+    <strong>Naming Convention:</strong>The naming convention could be incorrect:
+    <span class="inline-block indent-8 w-full">Images = "_image.ext"</span>
+    <span class="inline-block indent-8 w-full">Applications = "_application.csv"</span>
+  </p>
   <p class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
     <strong>Allowed file types:</strong> .jpg, .jpeg, .png, .webp (images) and .csv (applications)
   </p>
