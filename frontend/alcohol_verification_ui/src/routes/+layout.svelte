@@ -1,10 +1,10 @@
 <script lang="ts">
 	import './layout.css';
-	import "../app.css";
-	import favicon from '$lib/assets/favicon.svg';
+	import '../app.css';
 
 	let { children } = $props();
+	let logo = '/treasury_logo.svg';
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<svelte:head><link rel="icon" href={logo} /></svelte:head>
 {@render children()}
