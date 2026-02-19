@@ -441,7 +441,7 @@ def check_government_warning(warning_present: bool, warning_all_caps: bool, warn
     # Pass if no text to compare (fallback)
     return ('pass', None)
 
-async def verify_label(image_bytes, application_data, running_from_main=False):
+async def verify_label(image_bytes, application_data, running_from_main=False) -> dict:
     """
         Main label verification function using base comparison algorithms and the OpenAI Vision API.
         Compares extracted label fields against expected application data and returns detailed results.
