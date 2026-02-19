@@ -35,7 +35,6 @@
     <div
       class="bg-white rounded-lg p-6 max-w-{modalSize} mx-4" 
       on:click|stopPropagation
-      on:keydown|stopPropagation
       role="document"
     >
       <div class="flex items-start gap-4">
@@ -52,20 +51,20 @@
         {/if}
         <div class="flex-1">
           <h3 id="modal-title" class="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-          <div class="text-sm text-gray-600 mb-4">
-            <slot />
-          </div>
+            <div class="text-sm text-gray-600 mb-4">
+              <slot />
+            </div>
           <div class="flex gap-3 justify-end">
             <button
               on:click={onCancel}
-              class="px-4 py-2 text-gray-700 hover:text-gray-900 font-semibold"
+              class="px-4 py-2 text-gray-700 cursor-pointer hover:text-gray-900 font-semibold"
             >
               {cancelText}
             </button>
             {#if onConfirm}
               <button
                 on:click={onConfirm}
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 cursor-pointer text-white font-semibold rounded-lg transition-colors"
               >
                 {confirmText}
               </button>

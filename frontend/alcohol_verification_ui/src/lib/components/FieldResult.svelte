@@ -40,7 +40,7 @@
     {#if onOverride && (result.status === 'fail' || result.status === 'warning') && !result.overridden}
       <button
         onclick={onOverride}
-        class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded transition-colors"
+        class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 cursor-pointer text-white font-semibold rounded transition-colors"
       >
         Override to Pass
       </button>

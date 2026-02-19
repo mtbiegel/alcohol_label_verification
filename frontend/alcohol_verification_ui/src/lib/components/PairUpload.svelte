@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Modal from '$lib/components/Modal.svelte'
   import type { FilePair, ApplicationData } from '$lib/types';
 
   let { onPairsUpdate }: { onPairsUpdate: (pairs: FilePair[]) => void } = $props();
@@ -6,6 +7,25 @@
   let pairs = $state<Map<string, FilePair>>(new Map());
   let isDragging = $state(false);
   let fileInputElement: HTMLInputElement;
+
+  // Add these for the modal
+  let showRejectedFilesModal = $state(false);
+  let rejectedFilesList = $state<string[]>([]);
+
+  const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
+  const ALLOWED_APPLICATION_EXTENSION = '.csv';
+
+  function isValidFileType(filename: string, type: 'image' | 'application'): boolean {
+    const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
+    
+    if (type === 'image') {
+      return ALLOWED_IMAGE_EXTENSIONS.includes(ext);
+    } else if (type === 'application') {
+      return ext === ALLOWED_APPLICATION_EXTENSION;
+    }
+    
+    return false;
+  }
 
   function extractBaseName(filename: string): { baseName: string; type: 'image' | 'application' | null } {
     const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'));
@@ -22,41 +42,58 @@
   async function processFiles(files: FileList | File[]) {
     const fileArray = Array.from(files);
     const newPairs = new Map(pairs);
+    const rejectedFiles: string[] = [];
 
     for (const file of fileArray) {
       const { baseName, type } = extractBaseName(file.name);
 
       if (!type) {
         console.warn(`File ${file.name} doesn't follow naming convention`);
+        rejectedFiles.push(file.name);
         continue;
       }
 
-      if (!newPairs.has(baseName)) {
-        newPairs.set(baseName, {
+      // Validate file type
+      if (!isValidFileType(file.name, type)) {
+        console.warn(`File ${file.name} has invalid file type`);
+        rejectedFiles.push(`${file.name} (invalid type)`);
+        continue;
+      }
+
+      // Get existing pair or create new one
+      let existingPair = newPairs.get(baseName);
+      
+      // IMPORTANT: Always create a NEW object to trigger reactivity
+      let pair: FilePair;
+      if (existingPair) {
+        // Create a new object by spreading the existing one
+        pair = { ...existingPair };
+      } else {
+        // Create a brand new pair
+        pair = {
           baseName,
           imageFile: null,
           applicationFile: null,
           applicationData: null,
           status: 'missing-application'
-        });
+        };
       }
-
-      const pair = newPairs.get(baseName)!;
 
       if (type === 'image') {
         pair.imageFile = file;
       } else if (type === 'application') {
         pair.applicationFile = file;
-        // Parse CSV file
         try {
           const text = await file.text();
           pair.applicationData = parseCSVFile(text);
         } catch (err) {
           console.error(`Failed to parse ${file.name}:`, err);
+          rejectedFiles.push(`${file.name} (parse error)`);
+          continue;
         }
       }
 
-      // Update status
+      // Recalculate status
       if (pair.imageFile && pair.applicationFile && pair.applicationData) {
         pair.status = 'complete';
       } else if (pair.imageFile && !pair.applicationFile) {
@@ -65,11 +102,19 @@
         pair.status = 'missing-image';
       }
 
+      // Set the NEW pair object in the map
       newPairs.set(baseName, pair);
     }
 
-    pairs = newPairs;
+    // Force reactivity by creating new Map
+    pairs = new Map(newPairs);
     onPairsUpdate(Array.from(pairs.values()));
+
+    // Show rejected files modal if any
+    if (rejectedFiles.length > 0) {
+      rejectedFilesList = rejectedFiles;
+      showRejectedFilesModal = true;
+    }
   }
 
   function parseCSVFile(csvText: string): ApplicationData {
@@ -173,7 +218,7 @@
     bind:this={fileInputElement}
     type="file"
     multiple
-    accept="image/*,.csv"
+    accept=".jpg, .jpeg, .png, .webp, .csv"
     onchange={handleFileInput}
     class="hidden"
   />
@@ -216,3 +261,24 @@
     </div>
   {/if}
 </div>
+
+<Modal
+  bind:show={showRejectedFilesModal}
+  title="Invalid Files Detected"
+  icon={`<svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+  </svg>`}
+  onCancel={() => showRejectedFilesModal = false}
+  confirmText="OK"
+  onConfirm={() => showRejectedFilesModal = false}
+>
+  <p class="mb-3">The following files were rejected:</p>
+  <ul class="list-disc pl-5 space-y-1 mb-3 max-h-48 overflow-y-auto">
+    {#each rejectedFilesList as file}
+      <li class="text-sm text-gray-700">{file}</li>
+    {/each}
+  </ul>
+  <p class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+    <strong>Allowed file types:</strong> .jpg, .jpeg, .png, .webp (images) and .csv (applications)
+  </p>
+</Modal>

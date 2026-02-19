@@ -2,7 +2,7 @@
   import PairUpload from '$lib/components/PairUpload.svelte';
   import ResultsViewer from '$lib/components/ResultsViewer.svelte';
   import Modal from '$lib/components/Modal.svelte'
-  import type { FilePair, VerificationResult, VerificationBatch } from '$lib/types';
+  import type { FilePair, VerificationResult } from '$lib/types';
 
   let pairs = $state<FilePair[]>([]);
   let isProcessing = $state(false);
@@ -220,7 +220,7 @@
           <button
             onclick={handleVerifyAll}
             disabled={isProcessing || completePairsCount === 0}
-            class="flex-1 py-4 px-6 bg-blue-800 hover:bg-blue-900 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-lg font-semibold rounded-xl transition-colors shadow-sm"
+            class="flex-1 py-4 px-6 bg-blue-800 hover:bg-blue-900 cursor-pointer disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-lg font-semibold rounded-xl transition-colors shadow-sm"
           >
             {#if isProcessing}
               <span class="flex items-center justify-center gap-3">
@@ -239,7 +239,7 @@
             <button
               onclick={handleReset}
               disabled={isProcessing}
-              class="px-6 py-4 border-2 border-gray-400 hover:border-gray-600 disabled:border-gray-300 text-gray-700 disabled:text-gray-400 font-semibold rounded-xl transition-colors"
+              class="px-6 py-4 border-2 border-gray-400 hover:border-gray-600 cursor-pointer disabled:border-gray-300 text-gray-700 disabled:text-gray-400 font-semibold rounded-xl transition-colors"
             >
               Clear All
             </button>
@@ -318,6 +318,7 @@
   show={showWarning}
   title=""
   onConfirm={processVerification}
+  onCancel={() => showHelp = false}
   modalSize="sm"
   confirmText="Continue Anyway"
 >
