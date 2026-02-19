@@ -6,12 +6,14 @@
     pairs,
     currentIndex = $bindable(),
     onReset,
-    processingProgress = null  // Add this
+    processingProgress = null,
+    batchSize
   }: { 
     pairs: FilePair[],
     currentIndex: number,
     onReset: () => void,
     processingProgress?: { current: number; total: number } | null  // Add this
+    batchSize: number
   } = $props();
 
   const currentPair = $derived(pairs[currentIndex]);
@@ -104,7 +106,7 @@
         </svg>
         <div class="flex-1">
           <p class="text-sm font-semibold text-blue-900">Processing Labels...</p>
-          <p class="text-xs text-blue-700">{processingProgress.current} of {processingProgress.total} complete</p>
+          <p class="text-xs text-blue-700">{processingProgress.current} of {processingProgress.total} complete | Batch Processing Size: {batchSize}</p>
         </div>
         <div class="text-right">
           <p class="text-2xl font-bold text-blue-900">{Math.round((processingProgress.current / processingProgress.total) * 100)}%</p>

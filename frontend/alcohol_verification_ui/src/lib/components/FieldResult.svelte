@@ -50,7 +50,7 @@
       {#if onOverride}
         <button
           onclick={onOverride}
-          class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded transition-colors"
+          class="px-2.5 py-2.5 text-xs bg-blue-600 hover:bg-blue-800 text-white font-semibold rounded transition-colors"
         >
           Override as "Approved"
         </button>
@@ -58,7 +58,7 @@
       {#if onConfirmReject && result.status === 'warning'}
         <button
           onclick={onConfirmReject}
-          class="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white font-semibold rounded transition-colors"
+          class="px-2.5 py-2.5 text-xs bg-red-600 hover:bg-red-800 text-white font-semibold rounded transition-colors"
         >
           Confirm "Rejected"
         </button>

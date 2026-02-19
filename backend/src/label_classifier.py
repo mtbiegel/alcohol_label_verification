@@ -34,18 +34,18 @@ async def extract_fields_with_vision(image_bytes, expected_values):
     
     base64_image = base64.b64encode(image_bytes).decode('utf-8')
     
-    prompt = (f"""You are a TTB (Alcohol and Tobacco Tax and Trade Bureau) label compliance expert.
+    prompt = (f"""You are a U.S. TTB alcohol label compliance expert.
 
     Extract the following information from this alcohol beverage label and determine if the values match the expected values:
 
-    1. **Brand Name** - The main product brand (usually the largest text). The expected value is {expected_brand_name}. Does it match? Populate json accordingly with the instructions later in the message.
-    2. **Class/Type** - The beverage category (e.g., "Straight Rye Whisky", "India Pale Ale", "Single Barrel Bourbon"). The expected value is {expected_class_type}. Does it match? Populate json accordingly with the instructions later in the message.
-    3. **Alcohol Content** - The ABV percentage (e.g., "45% ALC/VOL", "5.5% ABV"). The expected value is {expected_alcohol_content}. Does it match? Populate json accordingly with the instructions later in the message.
-    4. **Net Contents** - The volume (e.g., "750 ML", "12 FL OZ"). The expected value is {expected_net_content}. Does it match? Populate json accordingly with the instructions later in the message.
-    5. **Government Warning** - Check if present and if "GOVERNMENT WARNING:" is in all caps. The expected value is {GOV_WARNING_STR}. Does it match? Populate json accordingly with the instructions later in the message.
+    1. Brand Name - The main product brand (usually the largest text). Expected value is {expected_brand_name}. Does it match? Populate json accordingly with the instructions later in the message.
+    2. Class/Type - The beverage category (e.g., "Straight Rye Whisky", "India Pale Ale", "Single Barrel Bourbon"). The expected value is {expected_class_type}. Does it match? Populate json accordingly with the instructions later in the message.
+    3. Alcohol Content - The ABV percentage (e.g., "45% ALC/VOL", "5.5% ABV"). The expected value is {expected_alcohol_content}. Does it match? Populate json accordingly with the instructions later in the message.
+    4. Net Contents - The volume (e.g., "750 ML", "12 FL OZ"). The expected value is {expected_net_content}. Does it match? Populate json accordingly with the instructions later in the message.
+    5. Government Warning - Check if present and if "GOVERNMENT WARNING:" is in all caps. The expected value is {GOV_WARNING_STR}. Does it match? Populate json accordingly with the instructions later in the message.
 
     Ignore captilization and adjusted for small discrepancies between the classified and expected values. 
-    However, the government warning label must have the EXACT wording and capitalization as the expected value, but the words can be stacked or rotated",
+    IMPORTANT: the government warning label must have the EXACT wording and capitalization as the expected value, but the words can be stacked or rotated",
     If the government warning is present in all caps as "GOVERNMENT WARNING:" and the main body of text as follows {GOV_WARNING_MAIN_STR} is present, then set "government_warning_matches" to true
     Respond with ONLY valid JSON (no markdown, no explanation):
     {{
@@ -68,7 +68,7 @@ async def extract_fields_with_vision(image_bytes, expected_values):
     try:
         response = await openai_client.chat.completions.create(
             model='gpt-4o-mini',
-            max_tokens=800,
+            max_tokens=400,
             messages=[{
                 'role': 'user',
                 'content': [

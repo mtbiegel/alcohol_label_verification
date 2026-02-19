@@ -16,6 +16,8 @@
   let attribute_blur = 7;
   let background_opacity = 0.8;
   let background_size = 100;
+  const BATCH_SIZE = 5;
+  let currentBatchSize = BATCH_SIZE;
 
   let pairUploadRef = $state<any>(null);
 
@@ -56,14 +58,26 @@
     error = null;
     processedPairs = [];
     processingProgress = { current: 0, total: completePairs.length };
+    
+    for (let i = 0; i < completePairs.length; i += BATCH_SIZE) {
+      const batch = completePairs.slice(i, i + BATCH_SIZE);
 
-    for (const pair of completePairs) {
+      currentBatchSize = batch.length
+
       try {
         const formData = new FormData();
-        formData.append('image', pair.imageFile!);
-        formData.append('applicationData', JSON.stringify(pair.applicationData));
-
-        const response = await fetch('/api/verify', {
+        
+        for (const pair of batch) {
+          formData.append('images', pair.imageFile!);
+        }
+        
+        const appDataArray = batch.map(pair => ({
+          baseName: pair.baseName,
+          ...pair.applicationData
+        }));
+        formData.append('applicationData', JSON.stringify(appDataArray));
+        
+        const response = await fetch('/api/verify-batch', {
           method: 'POST',
           body: formData
         });
@@ -72,25 +86,37 @@
           throw new Error(`Server error: ${response.status}`);
         }
 
-        const result: VerificationResult = await response.json();
+        // Response is now just an array of results
+        const batchResults = await response.json();
         
-        processedPairs.push({
-          ...pair,
-          result
-        });
+        // Map results back to pairs by index
+        for (let j = 0; j < batch.length; j++) {
+          const pair = batch[j];
+          const result = batchResults[j]; // Direct access - no .result wrapper
+          
+          processedPairs.push({
+            ...pair,
+            result: result
+          });
+          
+          processingProgress.current++;
+        }
+        
       } catch (err) {
-        processedPairs.push({
-          ...pair,
-          result: {
-            overallStatus: 'rejected',
-            summary: err instanceof Error ? err.message : 'Processing failed',
-            fields: []
-          }
-        });
+        for (const pair of batch) {
+          processedPairs.push({
+            ...pair,
+            result: {
+              overallStatus: 'rejected',
+              summary: err instanceof Error ? err.message : 'Processing failed',
+              fields: []
+            }
+          });
+          processingProgress.current++;
+        }
       }
-
-      processingProgress.current++;
     }
+
     isProcessing = false;
     currentIndex = 0;
   }
@@ -265,6 +291,7 @@
         bind:currentIndex={currentIndex}
         onReset={handleReset}
         processingProgress={isProcessing ? processingProgress : null}
+        batchSize={currentBatchSize}
       />
     {/if}
 

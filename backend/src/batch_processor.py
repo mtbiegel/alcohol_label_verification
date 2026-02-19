@@ -5,14 +5,15 @@ import json
 from openai import RateLimitError
 import httpx
 
-MAX_CONCURRENT = 5
-BATCH_DELAY_SECONDS = 2   # Pause between batches to stay under TPM limit
-MAX_RETRIES = 5
+MAX_CONCURRENT_JOBS_NUM = 5
+BATCH_DELAY_SECONDS = 4   # Pause between batches to stay under TPM limit
+MAX_RETRIES = 10
 
 async def verify_with_retry(image, app_data):
     for attempt in range(MAX_RETRIES):
         try:
             return await label_classifier.verify_label(image, app_data)
+            print(f"No rate limit or JSON parsing issues")
         except (RateLimitError, httpx.HTTPStatusError) as e:
             if attempt == MAX_RETRIES - 1:
                 raise
@@ -25,22 +26,20 @@ async def verify_with_retry(image, app_data):
             return None  # or some sentinel value
 
 # Launch n number of processes in parallel
-async def process_batch(total_batch):
+async def process_batch(total_batch, max_concurrent_jobs=MAX_CONCURRENT_JOBS_NUM, show_print_statements=False):
 
     total_batch_results = []
-    for i in range(0, len(total_batch), MAX_CONCURRENT):
+    for i in range(0, len(total_batch), max_concurrent_jobs):
         batch_results = []
-        batch = total_batch[i:i+MAX_CONCURRENT]
+        batch = total_batch[i:i+max_concurrent_jobs]
 
-        print(f"Processing batch {i // MAX_CONCURRENT + 1}, size: {len(batch)}")
+        if show_print_statements:
+            print(f"Processing batch {i // max_concurrent_jobs + 1}, size: {len(batch)}")
         
         batch_results = await asyncio.gather(*(verify_with_retry(item[0], item[1]) for item in batch))
         total_batch_results.extend(batch_results)
 
-    
-    print(f"\nTOTAL BATCH RESULTS - Length: {len(total_batch_results)}:")
-    print(json.dumps(total_batch_results, indent=2))
-
+    return total_batch_results
 
 if __name__ == '__main__':
     
@@ -69,4 +68,7 @@ if __name__ == '__main__':
 
             image_app_pairing.append([image_bytes, app_data])
         
-        asyncio.run(process_batch(image_app_pairing))
+        all_results = asyncio.run(process_batch(image_app_pairing), show_print_statements=True)
+
+        print(f"\nTOTAL BATCH RESULTS - Length: {len(all_results)}:")
+        print(json.dumps(all_results, indent=2))
