@@ -147,10 +147,7 @@
 	{/if}
 	<!-- Summary Stats -->
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-5">
-		<button
-			onclick={downloadAllResults}
-			class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-700 px-6 py-3 font-semibold text-white shadow-md backdrop-blur-md transition-colors hover:bg-blue-900"
-		>
+		<button onclick={downloadAllResults} class="download-all-results-button-design">
 			<svg class="h-14 w-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path
 					stroke-linecap="round"
@@ -162,15 +159,7 @@
 			Download All Results as CSV
 		</button>
 
-		<div
-			class="rounded-xl border border-white/40 p-4 text-center"
-			style="
-      background: rgba(255, 255, 255, 0.45);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.8);
-      "
-		>
+		<div class="liquid-glass-effect">
 			<p class="text-3xl font-bold text-gray-800">{pairs.length}</p>
 			<p class="text-md text-gray-700">Total Verified</p>
 		</div>
@@ -198,20 +187,8 @@
 	</div>
 
 	<!-- Navigation -->
-	<div
-		class="flex items-center justify-between rounded-xl border border-white/40 p-4"
-		style="
-    background: rgba(255, 255, 255, 0.45);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.8);
-    "
-	>
-		<button
-			onclick={goToPrevious}
-			disabled={currentIndex === 0}
-			class="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-gray-300"
-		>
+	<div class="liquid-glass-effect flex items-center justify-between">
+		<button onclick={goToPrevious} disabled={currentIndex === 0} class="previous-button-design">
 			← Previous
 		</button>
 
@@ -224,7 +201,7 @@
 		<button
 			onclick={goToNext}
 			disabled={currentIndex === pairs.length - 1}
-			class="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-gray-300"
+			class="next-button-design"
 		>
 			Next →
 		</button>
@@ -241,15 +218,7 @@
 				/>
 			{/if}
 		</div>
-		<div
-			class="rounded-xl border border-white/40 p-6"
-			style="
-      background: rgba(255, 255, 255, 0.45);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.8);
-      "
-		>
+		<div class="liquid-glass-effect">
 			<h3 class="mb-4 text-lg font-semibold text-gray-800">Label Image</h3>
 			{#if currentPair.imageFile}
 				<img

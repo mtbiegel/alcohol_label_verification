@@ -45,9 +45,7 @@
 				<span class="text-lg {config.text}">{config.icon}</span>
 				<h4 class="font-semibold text-gray-800">{result.field}</h4>
 				{#if result.overridden}
-					<span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700"
-						>OVERRIDDEN</span
-					>
+					<span class="overridden-tag-design">OVERRIDDEN</span>
 				{/if}
 			</div>
 			<div class="grid grid-cols-2 gap-3 text-sm">
@@ -68,18 +66,12 @@
 		{#if (result.status === 'fail' || result.status === 'warning') && !result.overridden}
 			<div class="flex flex-col gap-2">
 				{#if onOverride}
-					<button
-						onclick={onOverride}
-						class="rounded bg-blue-600 px-2.5 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-blue-800"
-					>
+					<button onclick={onOverride} class="override-button-design">
 						Override as "Approved"
 					</button>
 				{/if}
 				{#if onConfirmReject && result.status === 'warning'}
-					<button
-						onclick={onConfirmReject}
-						class="rounded bg-red-600 px-2.5 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-red-800"
-					>
+					<button onclick={onConfirmReject} class="confirm-reject-button-design">
 						Confirm "Rejected"
 					</button>
 				{/if}

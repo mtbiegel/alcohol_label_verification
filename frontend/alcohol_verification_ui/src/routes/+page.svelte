@@ -12,14 +12,10 @@
 	let showWarning = $state(false);
 	let showHelp = $state(false);
 	let processingProgress = $state({ current: 0, total: 0 });
+	let pairUploadRef = $state<any>(null);
 
-	let attribute_blur = 7;
-	let background_opacity = 0.8;
-	let background_size = 100;
 	const BATCH_SIZE = 4;
 	let currentBatchSize = BATCH_SIZE;
-
-	let pairUploadRef = $state<any>(null);
 
 	const completePairsCount = $derived(pairs.filter((p) => p.status === 'complete').length);
 	const incompletePairsCount = $derived(pairs.filter((p) => p.status !== 'complete').length);
@@ -146,19 +142,9 @@
 
 <div class="relative min-h-screen">
 	<!-- Background Logo -->
-	<div
-		class="pointer-events-none fixed inset-0"
-		style="
-			z-index: -1;
-			background-image: url('/background.png');
-			background-repeat: no-repeat;
-			background-position: center center;
-			background-size: {background_size}%;
-			opacity: {background_opacity};
-    "
-	></div>
+	<div class="background-image-design"></div>
 
-	<header class="bg-blue-900 text-white shadow-lg">
+	<header class="header-design">
 		<div class="mx-auto max-w-7xl px-6 py-4">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-4">
@@ -175,10 +161,7 @@
 					</div>
 				</div>
 				<div class="flex items-center gap-3">
-					<button
-						onclick={handleReset}
-						class="flex cursor-pointer items-center rounded-lg bg-white px-4 py-2 font-semibold text-blue-900 shadow-sm transition-colors hover:bg-blue-200"
-					>
+					<button onclick={handleReset} class="verify-new-label-button-design">
 						<svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<circle
 								cx="12"
@@ -210,17 +193,9 @@
 						Verify New Labels
 					</button>
 
-					<button
-						onclick={openHelp}
-						class="cursor-pointer rounded-lg bg-white px-4 py-2 font-semibold text-blue-900 shadow-sm transition-colors hover:bg-blue-200"
-					>
-						Using ProofCheck™
-					</button>
+					<button onclick={openHelp} class="help-button-design"> Using ProofCheck™ </button>
 
-					<button
-						onclick={downloadTemplate}
-						class="flex cursor-pointer items-center gap-2 rounded-lg bg-white px-4 py-2 font-semibold text-blue-900 shadow-sm transition-colors hover:bg-blue-200"
-					>
+					<button onclick={downloadTemplate} class="download-template-button-design">
 						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
 								stroke-linecap="round"
@@ -240,15 +215,7 @@
 		{#if processedPairs.length === 0}
 			<!-- Upload Section -->
 			<div class="space-y-6">
-				<section
-					class="rounded-xl border border-white/40 p-6"
-					style="
-          background: rgba(255, 255, 255, 0.45);
-          backdrop-filter: blur({attribute_blur}px);
-          -webkit-backdrop-filter: blur(16px);
-          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.8);
-          "
-				>
+				<section class="liquid-glass-effect">
 					<div class="mb-4">
 						<h2 class="text-lg font-semibold text-gray-900">Upload Labels & Applications</h2>
 						<p class="mt-1 text-sm text-gray-800">
@@ -265,7 +232,7 @@
 					<button
 						onclick={handleVerifyAll}
 						disabled={isProcessing || completePairsCount === 0}
-						class="flex-1 cursor-pointer rounded-xl bg-blue-800 px-6 py-4 text-lg font-semibold text-white shadow-sm transition-colors hover:bg-blue-900 disabled:cursor-not-allowed disabled:bg-gray-300"
+						class="verify-label-button-design"
 					>
 						{#if isProcessing}
 							<span class="flex items-center justify-center gap-3">
@@ -290,18 +257,14 @@
 					</button>
 
 					{#if pairs.length > 0}
-						<button
-							onclick={handleReset}
-							disabled={isProcessing}
-							class="cursor-pointer rounded-xl border-2 border-gray-400 px-6 py-4 font-semibold text-gray-700 transition-colors hover:border-gray-600 disabled:border-gray-300 disabled:text-gray-400"
-						>
+						<button onclick={handleReset} disabled={isProcessing} class="clear-all-button-design">
 							Clear All
 						</button>
 					{/if}
 				</div>
 
 				{#if error}
-					<div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+					<div class="error-design">
 						{error}
 					</div>
 				{/if}

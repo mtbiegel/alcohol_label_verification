@@ -197,10 +197,7 @@
 		ondragleave={handleDragLeave}
 		onclick={openFileBrowser}
 		onkeydown={(e) => e.key === 'Enter' && openFileBrowser()}
-		class="mb-4 cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors
-      {isDragging
-			? 'border-blue-500 bg-blue-50'
-			: 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'}"
+		class="dropzone {isDragging ? 'dropzone-dragging' : 'dropzone-idle'}"
 	>
 		<svg
 			class="mx-auto mb-3 h-12 w-12 text-gray-300"
@@ -250,20 +247,20 @@
 						</div>
 						<div class="flex gap-2 text-xs">
 							{#if pair.imageFile}
-								<span class="rounded bg-blue-100 px-2 py-1 text-blue-700">Image ✓</span>
+								<span class="status-valid-image">Image ✓</span>
 							{:else}
-								<span class="rounded bg-red-100 px-2 py-1 text-red-700">Image ✗</span>
+								<span class="status-missing">Image ✗</span>
 							{/if}
 							{#if pair.applicationFile}
-								<span class="rounded bg-green-100 px-2 py-1 text-green-700">App ✓</span>
+								<span class="status-valid-app">App ✓</span>
 							{:else}
-								<span class="rounded bg-red-100 px-2 py-1 text-red-700">App ✗</span>
+								<span class="status-missing">App ✗</span>
 							{/if}
 						</div>
 					</div>
 					<button
 						onclick={() => removePair(pair.baseName)}
-						class="ml-4 text-sm font-semibold text-red-600 hover:text-red-800"
+						class="ml-4 cursor-pointer text-sm font-semibold text-red-600 hover:text-red-800"
 					>
 						Remove
 					</button>
