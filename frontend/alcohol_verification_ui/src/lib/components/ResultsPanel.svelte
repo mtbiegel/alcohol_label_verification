@@ -5,9 +5,11 @@
   let { 
     result, 
     onFieldOverride,
+    onFieldConfirmReject
   }: { 
     result: VerificationResult; 
     onFieldOverride?: (index: number) => void;
+    onFieldConfirmReject?: (index: number) => void;
   } = $props();
 
   const statusConfig = {
@@ -67,9 +69,10 @@
     </h3>
 
     {#each result.fields as field, index}
-      <FieldResult
-        result={field}
+      <FieldResult 
+        result={field} 
         onOverride={onFieldOverride ? () => onFieldOverride(index) : undefined}
+        onConfirmReject={onFieldConfirmReject ? () => onFieldConfirmReject(index) : undefined}
       />
     {/each}
   </div>

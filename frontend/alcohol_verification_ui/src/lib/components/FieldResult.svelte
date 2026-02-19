@@ -1,7 +1,15 @@
 <script lang="ts">
   import type { FieldResult } from '$lib/types';
 
-  let { result, onOverride }: { result: FieldResult; onOverride?: () => void } = $props();
+  let { 
+    result, 
+    onOverride,
+    onConfirmReject
+  }: { 
+    result: FieldResult; 
+    onOverride?: () => void;
+    onConfirmReject?: () => void;
+  } = $props();
 
   const statusConfig = {
     pass: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700', icon: '✓', label: 'Pass' },
@@ -37,13 +45,25 @@
       {/if}
     </div>
     
-    {#if onOverride && (result.status === 'fail' || result.status === 'warning') && !result.overridden}
-      <button
-        onclick={onOverride}
-        class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 cursor-pointer text-white font-semibold rounded transition-colors"
-      >
-        Override to Pass
-      </button>
-    {/if}
+    {#if (result.status === 'fail' || result.status === 'warning') && !result.overridden}
+    <div class="flex flex-col gap-2">
+      {#if onOverride}
+        <button
+          onclick={onOverride}
+          class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded transition-colors"
+        >
+          Override as "Approved"
+        </button>
+      {/if}
+      {#if onConfirmReject && result.status === 'warning'}
+        <button
+          onclick={onConfirmReject}
+          class="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white font-semibold rounded transition-colors"
+        >
+          Confirm "Rejected"
+        </button>
+      {/if}
+    </div>
+  {/if}
   </div>
 </div>

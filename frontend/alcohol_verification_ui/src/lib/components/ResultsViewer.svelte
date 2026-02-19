@@ -71,6 +71,25 @@
       pairs = [...pairs];
     }
   }
+
+  function handleFieldConfirmReject(fieldIndex: number) {
+    if (currentPair.result) {
+      const field = currentPair.result.fields[fieldIndex];
+      field.status = 'fail';
+      field.overridden = true;
+      
+      // Recalculate overall status
+      const hasFailures = currentPair.result.fields.some(f => f.status === 'fail');
+      
+      if (hasFailures) {
+        currentPair.result.overallStatus = 'rejected';
+        currentPair.result.summary = 'One or more fields failed verification.';
+      }
+      
+      // Force reactivity
+      pairs = [...pairs];
+    }
+  }
 </script>
 
 <div class="space-y-6">
@@ -179,7 +198,11 @@
     <!-- Left: Results -->
     <div>
       {#if currentPair.result}
-        <ResultsPanel result={currentPair.result} onFieldOverride={handleFieldOverride} />
+        <ResultsPanel 
+          result={currentPair.result} 
+          onFieldOverride={handleFieldOverride}
+          onFieldConfirmReject={handleFieldConfirmReject}
+        />
       {/if}
     </div>
 
