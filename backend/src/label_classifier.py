@@ -6,6 +6,7 @@ import re
 from openai import AsyncOpenAI, RateLimitError
 from rapidfuzz import fuzz
 from dotenv import load_dotenv
+import traceback
 
 load_dotenv()
 openai_client = AsyncOpenAI(api_key=os.getenv('OPENAI_API_KEY'))
@@ -24,8 +25,19 @@ GOV_WARNING_MAIN_STR = (
     "operate machinery, and may cause health problems."
 )
 
+DEFAULT_EXTRACTED_FIELDS = {
+    "brand_name": "", "brand_name_matches": False,
+    "class_type": "", "class_type_matches": False,
+    "alcohol_content": "", "alcohol_content_matches": False,
+    "net_contents": "", "net_contents_matches": False,
+    "government_warning_present": False, "government_warning_all_caps": False,
+    "government_warning_text": "", "government_warning_matches": False
+}
+
 async def extract_fields_with_vision(image_bytes, expected_values):
     """Use OpenAI Vision API to extract fields from label image"""
+
+    result_text = "If you see this, a major error has occurred with result_text var"
 
     expected_brand_name = expected_values["brand_name"]
     expected_class_type = expected_values["class_type"]
@@ -38,14 +50,14 @@ async def extract_fields_with_vision(image_bytes, expected_values):
 
         Extract the following information from this alcohol beverage label and determine if extracted values match the expected values:
 
-        Brand Name → expected: {expected_brand_name}
-        Class/Type → expected: {expected_class_type}
-        Alcohol Content → expected: {expected_alcohol_content}
-        Net Contents → expected: {expected_net_content}
+        Brand Name → expected: {expected_brand_name}. NOTE: Additional nouns like "Brewery" may not necessarily be part of the brand name.
+        Class/Type → expected: {expected_class_type}. NOTE: Additional descriptor words may not necessarily be part of the class/type, but the expected value must be a word in the image.
+        Alcohol Content → expected: {expected_alcohol_content}. Make sure to search for this numerical value in image.
+        Net Contents → expected: {expected_net_content}. NOTE: Field could vary in wording/formatting and still be correct (i.e "1 Pint, 0.9 FL. OZ." = "1 0.9 Pint Fl oz")
 
         Government Warning must:
-        - Contain "GOVERNMENT WARNING:" in ALL CAPS
-        - Contain exact text: {GOV_WARNING_MAIN_STR}
+        - MUST contain "GOVERNMENT WARNING:" exact and in ALL CAPS
+        - MUST contain exact text: {GOV_WARNING_MAIN_STR}
 
         Ignore capitalization differences EXCEPT for "GOVERNMENT WARNING:" which must be exact.
 
@@ -93,22 +105,17 @@ async def extract_fields_with_vision(image_bytes, expected_values):
         extracted = json.loads(result_text)
         return extracted
 
+
+
     except RateLimitError:
-        raise  # Bubble up so process_batch.py retry logic can handle it
+        raise  # This allows error to bubble up to previous function call to handle retry logic
     except json.JSONDecodeError as e:
         print(f"Vision API JSON parse error: {e}\nRaw response: {result_text}")
-        return {
-            'brand_name': '', 'class_type': '', 'alcohol_content': '',
-            'net_contents': '', 'government_warning_present': False,
-            'government_warning_all_caps': False, 'government_warning_text': ''
-        }
+        return DEFAULT_EXTRACTED_FIELDS
     except Exception as e:
         print(f"Vision API error: {e}")
-        return {
-            'brand_name': '', 'class_type': '', 'alcohol_content': '',
-            'net_contents': '', 'government_warning_present': False,
-            'government_warning_all_caps': False, 'government_warning_text': ''
-        }
+        traceback.print_exc()
+        return DEFAULT_EXTRACTED_FIELDS
 
 
 def compare_brand_name(extracted: str, matches: bool, expected: str) -> tuple:
@@ -286,11 +293,6 @@ async def verify_label(image_bytes, application_data, running_from_main=False):
         extracted = asyncio.run(extract_fields_with_vision(image_bytes, application_data))
     else:
         extracted = await extract_fields_with_vision(image_bytes, application_data)
-  
-    # print()
-    # print("EXTRACTED:")
-    # print(json.dumps(extracted, indent=2))
-    # print()
     
     # Compare each field
     brand_status, brand_note = compare_brand_name(
@@ -310,11 +312,11 @@ async def verify_label(image_bytes, application_data, running_from_main=False):
         extracted.get('alcohol_content_matches', False),
         application_data.get('alcohol_content', '')
     )
-    
+
     contents_status, contents_note = compare_net_contents(
         extracted.get('net_contents', ''),
         extracted.get('net_contents_matches', False),
-        f"{application_data.get('net_contents_amount', '')} {application_data.get('net_contents_unit', '')}".strip()
+        application_data.get('net_contents', '')
     )
     
     warning_status, warning_note = check_government_warning(

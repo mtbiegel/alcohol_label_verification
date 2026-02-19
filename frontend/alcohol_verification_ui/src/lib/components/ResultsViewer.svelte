@@ -42,7 +42,7 @@
     
     for (const pair of pairs) {
       if (!pair.result) continue;
-      const statuses = pair.result.fields.map(f => f.overridden ? 'pass (overridden)' : f.status);
+      const statuses = pair.result.fields.map(f => f.overridden ? `${f.status} (overridden)` : f.status);
       csv += `${pair.baseName},${pair.result.overallStatus},${statuses.join(',')},${pair.result.summary.replace(/,/g, ';')}\n`;
     }
 

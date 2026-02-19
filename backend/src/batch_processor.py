@@ -7,24 +7,27 @@ import httpx
 
 MAX_CONCURRENT_JOBS_NUM = 5
 BATCH_DELAY_SECONDS = 4   # Pause between batches to stay under TPM limit
-MAX_RETRIES = 10
+MAX_RETRIES = 12
 
-async def verify_with_retry(image, app_data):
+async def verify_with_retry(image, app_data, batch_img_id):
     for attempt in range(MAX_RETRIES):
         try:
             output = await label_classifier.verify_label(image, app_data)
-            print(f"No rate limit or JSON parsing issues")
+            print(f"[INFO] Batch Image ID: {batch_img_id} - No rate limit or JSON parsing issues")
             return output
         except (RateLimitError, httpx.HTTPStatusError) as e:
-            if attempt == MAX_RETRIES - 1:
-                raise
-            wait_time = (2 ** attempt) + 0.5
-            print(f"Rate limit hit, retrying in {wait_time:.1f}s (attempt {attempt + 1}/{MAX_RETRIES})")
+            wait_time = float(attempt+1)
+            if hasattr(e, "response") and "Retry-After" in e.response.headers:
+                wait_time += float(e.response.headers["Retry-After"])
+                
+            print(f"[WARNING] Batch Image ID {batch_img_id} - Rate limit hit, retrying in {wait_time:.1f}s (attempt {attempt + 1}/{MAX_RETRIES})")
             await asyncio.sleep(wait_time)
         except json.JSONDecodeError:
             # Don't retry parse errors - they won't fix themselves
-            print("JSON parse error - skipping this item")
+            print(f"[ERROR] Batch Image ID {batch_img_id} - JSON parse error - skipping this item")
             return None  # or some sentinel value
+
+    raise Exception("verify_with_retry() - batch_processor.py: Verification failed unexpectedly")
 
 # Launch n number of processes in parallel
 async def process_batch(total_batch, max_concurrent_jobs=MAX_CONCURRENT_JOBS_NUM, show_print_statements=False):
@@ -37,8 +40,22 @@ async def process_batch(total_batch, max_concurrent_jobs=MAX_CONCURRENT_JOBS_NUM
         if show_print_statements:
             print(f"Processing batch {i // max_concurrent_jobs + 1}, size: {len(batch)}")
         
-        batch_results = await asyncio.gather(*(verify_with_retry(item[0], item[1]) for item in batch), return_exceptions=True)
-        total_batch_results.extend(batch_results)
+        batch_results = await asyncio.gather(*(verify_with_retry(item[0], item[1], batch_img_id=i) for i, item in enumerate(batch)), return_exceptions=True)
+
+        cleaned_results = []
+        for result in batch_results:
+            if isinstance(result, Exception):
+                print(f"ERROR - batch_result has invalid data: {result}. Sanitizing invalid data...", end="")
+                cleaned_results.append({
+                    "overallStatus": "error",
+                    "summary": "Processing failed",
+                    "fields": []
+                })
+                print("done")
+            else:
+                cleaned_results.append(result)
+
+        total_batch_results.extend(cleaned_results)
 
     return total_batch_results
 
