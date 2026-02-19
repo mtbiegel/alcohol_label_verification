@@ -149,12 +149,12 @@
 	<div
 		class="pointer-events-none fixed inset-0"
 		style="
-      z-index: -1;
-      background-image: url('/background.png');
-      background-repeat: no-repeat;
-      background-position: center center;
-      background-size: {background_size}%;
-      opacity: {background_opacity};
+			z-index: -1;
+			background-image: url('/background.png');
+			background-repeat: no-repeat;
+			background-position: center center;
+			background-size: {background_size}%;
+			opacity: {background_opacity};
     "
 	></div>
 
