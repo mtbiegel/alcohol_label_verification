@@ -36,39 +36,43 @@ async def extract_fields_with_vision(image_bytes, expected_values):
     
     prompt = (f"""You are a U.S. TTB alcohol label compliance expert.
 
-    Extract the following information from this alcohol beverage label and determine if the values match the expected values:
+        Extract the following information from this alcohol beverage label and determine if extracted values match the expected values:
 
-    1. Brand Name - The main product brand (usually the largest text). Expected value is {expected_brand_name}. Does it match? Populate json accordingly with the instructions later in the message.
-    2. Class/Type - The beverage category (e.g., "Straight Rye Whisky", "India Pale Ale", "Single Barrel Bourbon"). The expected value is {expected_class_type}. Does it match? Populate json accordingly with the instructions later in the message.
-    3. Alcohol Content - The ABV percentage (e.g., "45% ALC/VOL", "5.5% ABV"). The expected value is {expected_alcohol_content}. Does it match? Populate json accordingly with the instructions later in the message.
-    4. Net Contents - The volume (e.g., "750 ML", "12 FL OZ"). The expected value is {expected_net_content}. Does it match? Populate json accordingly with the instructions later in the message.
-    5. Government Warning - Check if present and if "GOVERNMENT WARNING:" is in all caps. The expected value is {GOV_WARNING_STR}. Does it match? Populate json accordingly with the instructions later in the message.
+        Brand Name → expected: {expected_brand_name}
+        Class/Type → expected: {expected_class_type}
+        Alcohol Content → expected: {expected_alcohol_content}
+        Net Contents → expected: {expected_net_content}
 
-    Ignore captilization and adjusted for small discrepancies between the classified and expected values. 
-    IMPORTANT: the government warning label must have the EXACT wording and capitalization as the expected value, but the words can be stacked or rotated",
-    If the government warning is present in all caps as "GOVERNMENT WARNING:" and the main body of text as follows {GOV_WARNING_MAIN_STR} is present, then set "government_warning_matches" to true
-    Respond with ONLY valid JSON (no markdown, no explanation):
-    {{
-        "brand_name": "exact text from label",
-        "brand_name_matches": "True/False if brand name matches",
-        "class_type": "exact text from label",
-        "class_type_matches": "True/False if class type matches",
-        "alcohol_content": "exact text from label",
-        "alcohol_content_matches": "True/False if alcohol content matches expected value",
-        "net_contents": "exact text from label",
-        "net_contents_matches": "True/False if net contents matches expected value",
-        "government_warning_present": True/False,
-        "government_warning_all_caps": True/False,
-        "government_warning_text": "full text if present, empty string if not",
-        "government_warning_matches": "True/False if the government_warning_all_caps is set to true and government_warning_text equals {GOV_WARNING_MAIN_STR}"
-    }}
+        Government Warning must:
+        - Contain "GOVERNMENT WARNING:" in ALL CAPS
+        - Contain exact text: {GOV_WARNING_MAIN_STR}
 
-    If a field is not visible on the label, use an empty string.""")
+        Ignore capitalization differences EXCEPT for "GOVERNMENT WARNING:" which must be exact.
+
+        Respond with ONLY valid JSON:
+
+        {{
+            "brand_name": "",
+            "brand_name_matches": True/False,
+            "class_type": "",
+            "class_type_matches": True/False,
+            "alcohol_content": "",
+            "alcohol_content_matches": True/False,
+            "net_contents": "",
+            "net_contents_matches": True/False,
+            "government_warning_present": True/False,
+            "government_warning_all_caps": True/False,
+            "government_warning_text": "",
+            "government_warning_matches": True/False
+        }}
+
+        If a field is not visible, use empty string.
+    """)
 
     try:
         response = await openai_client.chat.completions.create(
             model='gpt-4o-mini',
-            max_tokens=400,
+            max_tokens=300,
             messages=[{
                 'role': 'user',
                 'content': [

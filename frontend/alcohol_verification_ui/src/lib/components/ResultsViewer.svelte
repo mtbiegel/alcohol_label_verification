@@ -1,6 +1,11 @@
 <script lang="ts">
   import ResultsPanel from './ResultsPanel.svelte';
   import type { FilePair } from '$lib/types';
+  import { onMount } from 'svelte';
+
+  onMount(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  });
 
   let { 
     pairs,

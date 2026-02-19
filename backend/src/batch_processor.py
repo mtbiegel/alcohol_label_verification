@@ -12,8 +12,9 @@ MAX_RETRIES = 10
 async def verify_with_retry(image, app_data):
     for attempt in range(MAX_RETRIES):
         try:
-            return await label_classifier.verify_label(image, app_data)
+            output = await label_classifier.verify_label(image, app_data)
             print(f"No rate limit or JSON parsing issues")
+            return output
         except (RateLimitError, httpx.HTTPStatusError) as e:
             if attempt == MAX_RETRIES - 1:
                 raise
@@ -36,7 +37,7 @@ async def process_batch(total_batch, max_concurrent_jobs=MAX_CONCURRENT_JOBS_NUM
         if show_print_statements:
             print(f"Processing batch {i // max_concurrent_jobs + 1}, size: {len(batch)}")
         
-        batch_results = await asyncio.gather(*(verify_with_retry(item[0], item[1]) for item in batch))
+        batch_results = await asyncio.gather(*(verify_with_retry(item[0], item[1]) for item in batch), return_exceptions=True)
         total_batch_results.extend(batch_results)
 
     return total_batch_results
@@ -68,7 +69,7 @@ if __name__ == '__main__':
 
             image_app_pairing.append([image_bytes, app_data])
         
-        all_results = asyncio.run(process_batch(image_app_pairing), show_print_statements=True)
+        all_results = asyncio.run(process_batch(image_app_pairing, show_print_statements=True))
 
         print(f"\nTOTAL BATCH RESULTS - Length: {len(all_results)}:")
         print(json.dumps(all_results, indent=2))

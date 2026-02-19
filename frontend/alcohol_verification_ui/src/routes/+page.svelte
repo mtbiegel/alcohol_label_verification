@@ -16,7 +16,7 @@
   let attribute_blur = 7;
   let background_opacity = 0.8;
   let background_size = 100;
-  const BATCH_SIZE = 5;
+  const BATCH_SIZE = 4;
   let currentBatchSize = BATCH_SIZE;
 
   let pairUploadRef = $state<any>(null);
@@ -134,8 +134,8 @@
   }
 
   function downloadTemplate() {
-    const csv = `brand_name,class_type,alcohol_content_amount,alcohol_content_format,net_contents_amount,net_contents_unit,producer_name,country_of_origin
-    Midnight Ember,Smoky Bourbon Whiskey,47,%,750,mL,Midnight Ember Distillery,USA`;
+    const csv = `brand_name,class_type,alcohol_content_amount,alcohol_content_format,net_contents_amount,net_contents_unit,producer_name
+    Midnight Ember,Smoky Bourbon Whiskey,47,%,750,mL,Midnight Ember Distillery`;
 
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -153,7 +153,7 @@
     class="fixed inset-0 pointer-events-none"
     style="
       z-index: -1;
-      background-image: url('/usa_seal.png');
+      background-image: url('/background.png');
       background-repeat: no-repeat;
       background-position: center center;
       background-size: {background_size}%;
@@ -167,9 +167,11 @@
 
         <!-- LEFT SIDE -->
         <div class="flex items-center gap-4">
-          <div class="rounded p-1">
+          <button 
+            onclick={handleReset}
+            class="rounded p-1 cursor-pointer">
             <img src="/treasury_logo.svg" alt="Treasury Logo" width="80" height="80">
-          </div>
+          </button>
           <div>
             <h1 class="text-xl font-bold tracking-wide">
               ProofCheck™
