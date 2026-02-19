@@ -54,7 +54,7 @@ async def verify_with_retry(image: bytes, app_data: dict, batch_img_id: int) -> 
     # Raise exception if all retry attempts fail
     raise Exception("verify_with_retry() - batch_processor.py: Verification failed unexpectedly")
 
-async def process_batch(total_batch: list, max_concurrent_jobs=MAX_CONCURRENT_JOBS_NUM: int, show_print_statements=False: bool) -> list:
+async def process_batch(total_batch: list, max_concurrent_jobs: int =MAX_CONCURRENT_JOBS_NUM, show_print_statements: bool =False) -> list:
     """
         Processes a list of label verification tasks in batches, handling concurrency and 
         retry logic, and sanitizes any exceptions in results.
@@ -82,7 +82,7 @@ async def process_batch(total_batch: list, max_concurrent_jobs=MAX_CONCURRENT_JO
 
         # Print batch info if requested
         if show_print_statements:
-            print(f"Processing batch {i // max_concurrent_jobs + 1}, size: {len(batch)}")
+            print(f"[INFO] Processing batch {i // max_concurrent_jobs + 1}, size: {len(batch)}")
         
         # Run verify_with_retry concurrently for all items in the batch
         batch_results = await asyncio.gather(*(verify_with_retry(item[0], item[1], batch_img_id=i) for i, item in enumerate(batch)), return_exceptions=True)
@@ -91,7 +91,7 @@ async def process_batch(total_batch: list, max_concurrent_jobs=MAX_CONCURRENT_JO
         cleaned_results = []
         for result in batch_results:
             if isinstance(result, Exception):
-                print(f"ERROR - batch_result has invalid data: {result}. Sanitizing invalid data...", end="")
+                print(f"[ERROR] batch_result has invalid data: {result}. Sanitizing invalid data...", end="")
                 cleaned_results.append({
                     "overallStatus": "error",
                     "summary": "Processing failed",
@@ -108,7 +108,7 @@ async def process_batch(total_batch: list, max_concurrent_jobs=MAX_CONCURRENT_JO
     return total_batch_results
 
 if __name__ == '__main__':
-     """
+    """
         ABOUT main:
             This main function is used for testing values during development
             The intent is to not use it in any deployed setting or aspect
@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
     # If the list lengths of images and apps don't match, an error occurred
     if (len(image_files_name_list) != len(app_files_name_list)):
-        print("ERROR: image files and app files are of different quantities")
+        print("[ERROR] image files and app files are of different quantities")
     else:
         # Pair each image with its corresponding application data for processing
         image_app_pairing = []
@@ -149,5 +149,5 @@ if __name__ == '__main__':
         all_results = asyncio.run(process_batch(image_app_pairing, show_print_statements=True))
 
         # Print summary of total batch results
-        print(f"\nTOTAL BATCH RESULTS - Length: {len(all_results)}:")
+        print(f"\n[INFO] TOTAL BATCH RESULTS - Length: {len(all_results)}:")
         print(json.dumps(all_results, indent=2))

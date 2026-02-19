@@ -24,7 +24,7 @@ async def verify_batch(images: List[UploadFile] = File(...), applicationData: st
     """
 
     # Log entry into batch endpoint and number of images to process
-    print(f"At batch verify API endpoint - processing {len(images)} images")
+    print(f"[ERROR] At batch verify API endpoint - processing {len(images)} images")
     
     # Parse application data JSON from form (expects a list of objects)
     try:
@@ -63,11 +63,11 @@ async def verify_batch(images: List[UploadFile] = File(...), applicationData: st
     try:
         results = await batch_processor.process_batch(image_app_pairing, len(image_app_pairing))
     except Exception as e:
-        print(f"verify_batch(): Failed to process image batch. Exiting with error: {e}")
+        print(f"[ERROR] verify_batch(): Failed to process image batch. Exiting with error: {e}")
         raise HTTPException(status_code=500, detail="Batch processing failed")
 
     # Log completion and return results
-    print(f"Batch processing complete: {len(results)} results")
+    print(f"[ERROR] Batch processing complete: {len(results)} results")
     return results
 
 @app.post("/verify")
@@ -79,7 +79,7 @@ async def verify(image: UploadFile = File(...), applicationData: str = Form(...)
     """
 
     # Log entry into the endpoint
-    print("At Single verify API endpoint")
+    print("[INFO] At Single verify API endpoint")
 
     # Read uploaded image bytes
     try:
@@ -99,11 +99,11 @@ async def verify(image: UploadFile = File(...), applicationData: str = Form(...)
 
     # Call label verification function and handle any errors
     try:
-        print("Starting processing...")
+        print("[INFO] Starting processing...")
         result = await label_classifier.verify_label(image_bytes, app_data)
         print("Finished procesing")
     except Exception as e:
-        print(f"verify(): Failed to process image. Exiting with error: {e}")
+        print(f"[INFO] verify(): Failed to process image. Exiting with error: {e}")
         raise HTTPException(status_code=500, detail="Image processing failed")
 
     # Return verification results to client

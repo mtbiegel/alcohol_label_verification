@@ -156,12 +156,12 @@ async def extract_fields_with_vision(image_bytes: bytes, expected_values: dict) 
 
     # Raises JSON decoding error if result is not in the correct format
     except json.JSONDecodeError as e:
-        print(f"Vision API JSON parse error: {e}\nRaw response: {result_text}")
+        print(f"[ERROR] Vision API JSON parse error: {e}\nRaw response: {result_text}")
         return DEFAULT_EXTRACTED_FIELDS
 
     # Raises other errors that are not expected errors
     except Exception as e:
-        print(f"Vision API error: {e}")
+        print(f"[ERROR] Vision API error: {e}")
         traceback.print_exc()
         return DEFAULT_EXTRACTED_FIELDS
 
