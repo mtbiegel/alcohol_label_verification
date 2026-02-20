@@ -5,12 +5,14 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
+const API_BASE = import.meta.env.VITE_API_URL;
+
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const formData = await request.formData();
 
 		// Forward directly to your Python backend
-		const response = await fetch('http://localhost:8000/verify', {
+		const response = await fetch(`${API_BASE}/verify`, {
 			method: 'POST',
 			body: formData // pass formData straight through
 		});

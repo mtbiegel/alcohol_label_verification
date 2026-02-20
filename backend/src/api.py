@@ -11,12 +11,14 @@ import batch_processor
 import os
 import uvicorn
 
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+
 # Initialize FastAPI app and configure CORS middleware to allow POST requests from the SvelteKit dev server
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # your SvelteKit dev server
-    allow_methods=["POST"],
+    allow_origins=["FRONTEND_URL"],  # your SvelteKit dev server
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
