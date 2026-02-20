@@ -218,7 +218,7 @@ See LICENSE file for full license text. -->
 		class="dropzone {isDragging ? 'dropzone-dragging' : 'dropzone-idle'}"
 	>
 		<svg
-			class="mx-auto mb-3 h-12 w-12 text-gray-300"
+			class="mx-auto mb-3 h-12 w-12 text-blue-700"
 			fill="none"
 			stroke="currentColor"
 			viewBox="0 0 24 24"
