@@ -8,6 +8,8 @@ from typing import List
 import json
 import label_classifier
 import batch_processor
+import os
+import uvicorn
 
 # Initialize FastAPI app and configure CORS middleware to allow POST requests from the SvelteKit dev server
 app = FastAPI()
@@ -132,3 +134,11 @@ async def verify(image: UploadFile = File(...), applicationData: str = Form(...)
 
     # Return verification results to client
     return result
+
+
+if __name__ == "__main__":
+    ### Main
+    # This main function is used to start the api from the deployed instance
+
+    port = int(os.environ.get("PORT", 8000))  # NOTE: Railway dynimcally sets PORT
+    uvicorn.run("api:app", host="0.0.0.0", port=port, reload=False)
