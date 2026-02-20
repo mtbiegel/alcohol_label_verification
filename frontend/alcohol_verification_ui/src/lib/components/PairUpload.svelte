@@ -279,7 +279,7 @@ See LICENSE file for full license text. -->
 					</div>
 					<button
 						onclick={() => removePair(pair.baseName)}
-						class="ml-4 cursor-pointer text-sm font-semibold text-red-600 hover:text-red-800"
+						class="ml-4 cursor-pointer text-sm font-semibold text-red-600 transition-colors hover:text-slate-800"
 					>
 						Remove
 					</button>

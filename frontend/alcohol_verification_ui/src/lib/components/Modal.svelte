@@ -12,6 +12,7 @@ See LICENSE file for full license text. -->
 	export let confirmText: string = 'OK';
 	export let cancelText: string = 'Cancel';
 	export let modalSize: string = 'xl';
+	export let showTestData = false;
 
 	// Close modal when clicking on backdrop
 	function handleBackdropClick(e: MouseEvent | KeyboardEvent) {
@@ -79,10 +80,26 @@ See LICENSE file for full license text. -->
 						<button
 							type="button"
 							on:click={onCancel}
-							class="cursor-pointer px-4 py-2 font-semibold text-gray-700 hover:text-gray-900"
+							class="cursor-pointer px-4 py-2 font-semibold text-gray-700 transition-colors hover:text-gray-900"
 						>
 							{cancelText}
 						</button>
+						{#if showTestData}
+							<!-- Download Example Files only in help menu -->
+							<a href="/example_pairings.zip" download>
+								<button class="download-test-data-button-design">
+									<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+										/>
+									</svg>
+									Example Data (ZIP)
+								</button>
+							</a>
+						{/if}
 						{#if onConfirm}
 							<button
 								type="button"

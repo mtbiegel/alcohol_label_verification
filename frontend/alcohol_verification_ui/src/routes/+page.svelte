@@ -7,7 +7,7 @@ See LICENSE file for full license text. -->
 	import PairUpload from '$lib/components/PairUpload.svelte';
 	import ResultsViewer from '$lib/components/ResultsViewer.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import type { FilePair, VerificationResult } from '$lib/types';
+	import type { FilePair } from '$lib/types';
 
 	// Constants
 	const BATCH_SIZE = 4;
@@ -308,6 +308,7 @@ See LICENSE file for full license text. -->
 			cancelText="Close"
 			onCancel={() => (showHelp = false)}
 			modalSize="4xl"
+			showTestData={true}
 		>
 			<h1 class="font-bold">About</h1>
 			<p>
@@ -324,7 +325,7 @@ See LICENSE file for full license text. -->
 					Template". Use this template as the starting point for bottlers and producers to input
 					data; this way, data can easily be loaded into the ProofCheck™ with the correct fields.
 					Once the information is populated into the CSV fields, follow the next step for file
-					naming scheme.
+					naming scheme. Click the "Example Data (ZIP)" for further clarification and testing. 
 				</p>
 				<br />
 				<li>Proper File Naming Scheme</li>
@@ -357,13 +358,16 @@ See LICENSE file for full license text. -->
 				</p>
 				<br />
 				<li>Results & Downloadables</li>
-				Once pair(s) have been processed and redirected to the Results page, there will be the following
-				attributes: Count for total, approved, needs-review, and rejected categories. Below that is the
-				individual hueristcs of the processed pairs with more detail about the results; next to that is
-				an image preview of the label you are observing. You are able to toggle through all the pair results
-				if you uploaded multiple pairs. You are able to download the hueristics from this validation run
-				with the "Download All Results as CSV" button. If you uploaded multiple pairs, you will see a
-				progress bar at the top of this page showing how many pairs are still processing.
+				<p>
+					Once pair(s) have been processed and redirected to the Results page, there will be the
+					following attributes: Count for total, approved, needs-review, and rejected categories.
+					Below that is the individual hueristcs of the processed pairs with more detail about the
+					results; next to that is an image preview of the label you are observing. You are able to
+					toggle through all the pair results if you uploaded multiple pairs. You are able to
+					download the hueristics from this validation run with the "Download All Results as CSV"
+					button. If you uploaded multiple pairs, you will see a progress bar at the top of this
+					page showing how many pairs are still processing.
+				</p>
 			</ol>
 		</Modal>
 	</main>

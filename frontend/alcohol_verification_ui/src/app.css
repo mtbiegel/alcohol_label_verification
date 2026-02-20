@@ -67,8 +67,12 @@ body {
 	@apply flex cursor-pointer items-center gap-2 rounded-lg bg-white px-4 py-2 font-semibold text-blue-900 shadow-sm transition-colors hover:bg-blue-200;
 }
 
+.download-test-data-button-design {
+	@apply flex cursor-pointer items-center gap-2 rounded-xl bg-blue-900 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-slate-600;
+}
+
 .verify-label-button-design {
-	@apply flex-1 cursor-pointer rounded-xl bg-blue-800 px-6 py-4 text-lg font-semibold text-white shadow-sm transition-colors hover:bg-blue-900 disabled:cursor-not-allowed disabled:bg-gray-300;
+	@apply flex-1 cursor-pointer rounded-lg bg-blue-800 px-6 py-4 text-lg font-semibold text-white shadow-sm transition-colors hover:bg-blue-900 disabled:cursor-not-allowed disabled:bg-gray-300;
 }
 
 .clear-all-button-design {
