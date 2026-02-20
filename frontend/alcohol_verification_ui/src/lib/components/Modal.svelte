@@ -6,7 +6,7 @@
 	export let onConfirm: (() => void) | null = null;
 	export let confirmText: string = 'OK';
 	export let cancelText: string = 'Cancel';
-	export let modalSize: string = '1xl';
+	export let modalSize: string = 'xl';
 
 	function handleBackdropClick(e: MouseEvent | KeyboardEvent) {
 		if (e.target === e.currentTarget) {
@@ -18,6 +18,10 @@
 		if (e.key === 'Escape') {
 			onCancel();
 		}
+	}
+
+	function stopPropagation(e: Event) {
+		e.stopPropagation();
 	}
 </script>
 
@@ -32,14 +36,16 @@
 		on:keydown={handleKeydown}
 		tabindex="-1"
 	>
+		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<div
-			class="rounded-lg bg-white p-6 max-w-{modalSize} mx-4"
+			class={`mx-4 rounded-lg bg-white p-6 max-w-${modalSize}`}
 			on:click|stopPropagation
 			role="document"
 		>
 			<div class="flex items-start gap-4">
 				{#if icon}
-					<div class="flex-shrink-0">
+					<div class="shrink-0">
 						{#if typeof icon === 'string'}
 							{@html icon}
 						{:else}
@@ -56,6 +62,7 @@
 					</div>
 					<div class="flex justify-end gap-3">
 						<button
+							type="button"
 							on:click={onCancel}
 							class="cursor-pointer px-4 py-2 font-semibold text-gray-700 hover:text-gray-900"
 						>
@@ -63,8 +70,9 @@
 						</button>
 						{#if onConfirm}
 							<button
+								type="button"
 								on:click={onConfirm}
-								class="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700"
+								class="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700"
 							>
 								{confirmText}
 							</button>

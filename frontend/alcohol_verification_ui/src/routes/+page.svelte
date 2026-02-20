@@ -4,6 +4,8 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import type { FilePair, VerificationResult } from '$lib/types';
 
+	const BATCH_SIZE = 4;
+
 	let pairs = $state<FilePair[]>([]);
 	let isProcessing = $state(false);
 	let processedPairs = $state<FilePair[]>([]);
@@ -13,9 +15,7 @@
 	let showHelp = $state(false);
 	let processingProgress = $state({ current: 0, total: 0 });
 	let pairUploadRef = $state<any>(null);
-
-	const BATCH_SIZE = 4;
-	let currentBatchSize = BATCH_SIZE;
+	let currentBatchSize = $state(BATCH_SIZE);
 
 	const completePairsCount = $derived(pairs.filter((p) => p.status === 'complete').length);
 	const incompletePairsCount = $derived(pairs.filter((p) => p.status !== 'complete').length);
@@ -226,7 +226,7 @@
 						</p>
 					</div>
 
-					<PairUpload bind:this={pairUploadRef} onPairsUpdate={handlePairsUpdate} {pairs} />
+					<PairUpload bind:this={pairUploadRef} onPairsUpdate={handlePairsUpdate} />
 				</section>
 				<div class="flex gap-4">
 					<button
@@ -285,7 +285,7 @@
 			title="How to use the ProofCheck™"
 			cancelText="Close"
 			onCancel={() => (showHelp = false)}
-			modalSize="3xl"
+			modalSize="4xl"
 		>
 			<h1 class="font-bold">About</h1>
 			<p>
@@ -354,7 +354,7 @@
 	confirmText="Continue Anyway"
 >
 	<div class="flex items-start gap-4">
-		<div class="flex-shrink-0">
+		<div class="shrink-0">
 			<svg class="h-12 w-12 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path
 					stroke-linecap="round"
