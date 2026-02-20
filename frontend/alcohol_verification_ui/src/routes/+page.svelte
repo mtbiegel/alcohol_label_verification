@@ -315,6 +315,11 @@ See LICENSE file for full license text. -->
 				This app helps government workers determine if alcohol beverage labels meet regulations set
 				by the Alcohol and Tobacco Tax and Trade Bureau (TTB). It allows workers to quickly verify
 				labels match corresponding application information and meet requirements.
+				<a
+					class="text-blue-600 underline hover:text-purple-900"
+					href="https://github.com/mtbiegel/alcohol_label_verification">Click here</a
+				>
+				to visit the Github repository to learn more.
 			</p>
 			<br />
 			<h1 class="font-bold">How to use</h1>
@@ -325,7 +330,7 @@ See LICENSE file for full license text. -->
 					Template". Use this template as the starting point for bottlers and producers to input
 					data; this way, data can easily be loaded into the ProofCheck™ with the correct fields.
 					Once the information is populated into the CSV fields, follow the next step for file
-					naming scheme. Click the "Example Data (ZIP)" for further clarification and testing. 
+					naming scheme. Click the "Example Data (ZIP)" for further clarification and testing.
 				</p>
 				<br />
 				<li>Proper File Naming Scheme</li>
@@ -336,7 +341,10 @@ See LICENSE file for full license text. -->
 					image, adding the "_application.csv" suffix. As a result, the image and application file
 					pair have the same constant name you defined as the prefix with corresponding suffixes.
 					Example of a pair with proper naming: "corona_extra_image.png" &
-					"corona_extra_application.png". <b>NOTE: Proper image file types are .jpg, .png, and .webp. Proper application file types are .csv</b>
+					"corona_extra_application.png". <b
+						>NOTE: Proper image file types are .jpg, .png, and .webp. Proper application file types
+						are .csv</b
+					>
 				</p>
 				<br />
 				<li>Upload Image & Application Pair</li>

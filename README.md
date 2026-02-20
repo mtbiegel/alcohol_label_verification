@@ -2,6 +2,12 @@
 
 ProofCheck™ is an AI-powered tool for automatically verifying alcohol beverage labels against TTB (Alcohol and Tobacco Tax and Trade Bureau) compliance requirements. Given an image of a product label and structured application information (e.g., brand name, alcohol percentage, producer details), the system analyzes the label and easily displays the results and a valid/invalid dertermination, indicating whether each field matches.
 
+PUBLIC URL: `https://alcohollabelverification-production.up.railway.app/`
+
+READ `MY_THOUGHTS.md`: This file goes over my thoughts, decisions, and approaches during this project in an informal, colloquial format.
+
+READ `PROJECT_REFLECTION.md`: This files is a formal review and techical reflection of the decision and approach I took.
+
 ## Features
 
 - Single and batch label verification
@@ -13,14 +19,13 @@ ProofCheck™ is an AI-powered tool for automatically verifying alcohol beverage
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:
-*NOTE: Other versions may work but have not been tested on, so no guarentee that other versions will work*
+_NOTE: Other versions may work but have not been tested on, so no guarentee that other versions will work_
 
 - **Python 3.12** ([Download](https://www.python.org/downloads/))
 - **Node.js v20.20.0** ([Download](https://nodejs.org/)) - FYSA: npm v10.8.2 and nvm v0.39.7 have been tested.
 - **Git** ([Download](https://git-scm.com/downloads))
 - **openAI API Key** - Either trial version or paid version is needed ($5 will be enough to test 1000+ verification runs)
-- **macOS or Linux Distros** - *Only Ubuntu 24.04 has been tested*
-
+- **macOS or Linux Distros** - _Only Ubuntu 24.04 has been tested_
 
 ## Development Installation and Runtime (not for deployment)
 
@@ -52,8 +57,10 @@ source venv/bin/activate
 ```
 
 **Install Python dependencies:**
+Navigate to the backend directory:
 
 ```bash
+cd backend/src
 pip install -r requirements.txt
 ```
 
@@ -65,7 +72,8 @@ Create a `.env` file in the `backend` directory:
 OPENAI_API_KEY=<YOUR_API_KEY_HERE>
 ```
 
-*NOTE: If the API key is not found during runtime, fall back to exporting API key to PATH. This will have to be done in every terminal that wants to run FastAPI (or add to `~/.bashrc`):*
+_NOTE: If the API key is not found during runtime, fall back to exporting API key to PATH. This will have to be done in every terminal that wants to run FastAPI (or add to `~/.bashrc`):_
+
 ```bash
 export OPENAI_API_KEY=<YOUR_API_KEY_HERE>
 ```
@@ -103,7 +111,9 @@ Run the following command to launch the FastAPI server with uvicorn
 ```bash
 uvicorn api:app --port 8000 --reload
 ```
+
 You should get a confirmation that the application has started:
+
 ```bash
 INFO:     Will watch for changes in these directories: ['/alcohol_label_verification/backend/src']
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
@@ -115,7 +125,8 @@ INFO:     Application startup complete.
 
 The backend API will be available at `http://localhost:8000`
 
-*NOTE: If an error returns saying the API key is not found, fall back to exporting API key to PATH:*
+_NOTE: If an error returns saying the API key is not found, fall back to exporting API key to PATH:_
+
 ```bash
 export OPENAI_API_KEY=<YOUR_API_KEY_HERE>
 ```
@@ -132,69 +143,99 @@ The frontend will be available at `http://localhost:5173`
 ## How To Use
 
 #### Prerequisites:
-For this application, you will need to have an image and 
+
+For this application, you will need to have an image and
 
 Click the "Using ProofCheck™" button in the top right to learn more about using ProofCheck™.
 
 **After starting both the frontend and backend (in separate terminals):**
+
 1. Open your browser and navigate to `http://localhost:5173`
 2. Click the "Using ProofCheck™" button in the top right to view and learn how to use this applicaiton. This is the best way to learn the application.
 
 If you prefer verbosity in this readme file, the instructions are outlined here:
 
-
 ### How to use ProofCheck™
 
-   #### Proper Application Format - Download the Template:
+#### Proper Application Format - Download the Template:
 
-   Download the application template from the button in the top right corner named `Download Template`. Use this template as the starting point for bottlers and producers to input data; this way, data can easily be loaded into the ProofCheck™ with the correct fields. Valid fields are as follows:
-   - Brand Name
-   - Class/Type
-   - Alcohol content Amount
-   - Alocohol Content Format
-   - Net Content Amount
-   - Net Content Format
-   - Producer Name
+Download the application template from the button in the top right corner named `Download Template`. Use this template as the starting point for bottlers and producers to input data; this way, data can easily be loaded into the ProofCheck™ with the correct fields. Valid fields are as follows:
 
-   An example image is: ![here](examples/readme_example_label.png)
-   
-   And the proper fields for the CSV are as follows:
-   - Brand Name: "Midnight Ember"
-   - Class/Type: Bourbon Whiskey
-   - Alcohol content Amount: 47
-   - Alocohol Content Format: %
-   - Net Content Amount: 750
-   - Net Content Format: mL
-   - Producer Name: Midnight Ember Distillery
-   
-   Once the information is populated into the CSV fields, follow the next step for file naming scheme.
+- Brand Name
+- Class/Type
+- Alcohol content Amount
+- Alocohol Content Format
+- Net Content Amount
+- Net Content Format
+- Producer Name
 
-   #### Proper File Naming Scheme
+An example image is: ![here](examples/readme_example_label.png)
 
-   Rename files such that the image file has `<_LABEL_NAME>_image.ext`, replacing `<LABEL_NAME>` with a constant name, adding the `_image.ext` where `.ext` is the original image extension (i.e `.jpg`, `.png`, `.webp`). Repeat this process for the application file: `<_LABEL_NAME>_application.csv`, replacing `<LABEL_NAME>` with the same constant name used on the image, adding the `_application.csv` suffix. As a result, the image and application file pair have the same constant name you defined as the prefix with corresponding suffixes.
-   
-   Example of a pair with proper naming:
-   - `corona_extra_image.png`
-   - `corona_extra_application.png`
-   
-   Example of another pair with proper naming:
-   - `smirnoff_ice_original_image.webp`
-   - `smirnoff_ice_original_aplication.csv`
+And the proper fields for the CSV are as follows:
 
-   #### Upload Image & Application Pair
+- Brand Name: "Midnight Ember"
+- Class/Type: Bourbon Whiskey
+- Alcohol content Amount: 47
+- Alocohol Content Format: %
+- Net Content Amount: 750
+- Net Content Format: mL
+- Producer Name: Midnight Ember Distillery
 
-   There are 2 methods to upload image and application pairs: You can drag and drop the image and application pair into the drop zone, or you can click the upload box and browse for image and applicaiton pair through the OS. A pair is needed to run a verification. Once you select a pair, it will show up in the "Uploaded Pairs" section and tell you if the pair is ready for valdiating or if it is missing an entry (i.e missing the image or the application).
+Once the information is populated into the CSV fields, follow the next step for file naming scheme. Click the "Example Data (ZIP)" button in the web app or navigate to `/frontend/alcohol_verification_ui/static/example_pairings.zip` (in the repo) to get example data and for testing.
 
-   #### Run Validation
+#### Proper File Naming Scheme
 
-   Once you have valid pair(s), click the "Verify" button at the bottom of the webpage. The processing will start and route you to the Results page once completed. Each pair validation takes approximately 5 seconds to complete. The UI will let you know of any invalid pairs. Clicking the "Verify" button will prompt you with a warning that a pair(s) is incomplete. Incomplete pairs will not be processed.
+Rename files such that the image file has `<_LABEL_NAME>_image.ext`, replacing `<LABEL_NAME>` with a constant name, adding the `_image.ext` where `.ext` is the original image extension (i.e `.jpg`, `.png`, `.webp`). Repeat this process for the application file: `<_LABEL_NAME>_application.csv`, replacing `<LABEL_NAME>` with the same constant name used on the image, adding the `_application.csv` suffix. As a result, the image and application file pair have the same constant name you defined as the prefix with corresponding suffixes.
 
-   #### Results & Downloadables
-   Once pair(s) have been processed and redirected to the Results page, there will be the following attributes: Count for total, approved, needs-review, and rejected categories. Below that is the individual hueristcs of the processed pairs with more detail about the results; next to that is an image preview of the label you are observing. You are able to toggle through all the pair results if you uploaded multiple pairs. 
-   
-   You are able to download the hueristics from this validation run with the "Download All Results as CSV" button. 
-   
-   If you uploaded multiple pairs to perform a batch verification, you will see a progress bar at the top of this page showing how many pairs are still processing.
+Example of a pair with proper naming:
+
+- `corona_extra_image.png`
+- `corona_extra_application.png`
+
+Example of another pair with proper naming:
+
+- `smirnoff_ice_original_image.webp`
+- `smirnoff_ice_original_aplication.csv`
+
+#### Upload Image & Application Pair
+
+There are 2 methods to upload image and application pairs: You can drag and drop the image and application pair into the drop zone, or you can click the upload box and browse for image and applicaiton pair through the OS. A pair is needed to run a verification. Once you select a pair, it will show up in the "Uploaded Pairs" section and tell you if the pair is ready for valdiating or if it is missing an entry (i.e missing the image or the application).
+
+#### Run Validation
+
+Once you have valid pair(s), click the "Verify" button at the bottom of the webpage. The processing will start and route you to the Results page once completed. Each pair validation takes approximately 5 seconds to complete. The UI will let you know of any invalid pairs. Clicking the "Verify" button will prompt you with a warning that a pair(s) is incomplete. Incomplete pairs will not be processed.
+
+#### Results & Downloadables
+
+Once pair(s) have been processed and redirected to the Results page, there will be the following attributes: Count for total, approved, needs-review, and rejected categories. Below that is the individual hueristcs of the processed pairs with more detail about the results; next to that is an image preview of the label you are observing. You are able to toggle through all the pair results if you uploaded multiple pairs.
+
+You are able to download the hueristics from this validation run with the "Download All Results as CSV" button.
+
+If you uploaded multiple pairs to perform a batch verification, you will see a progress bar at the top of this page showing how many pairs are still processing.
+
+## Testing
+
+### How to test:
+
+1. Open the deployed web application in your browser.
+2. Upload an/multiple label image and application pair(s) using the file upload interface.
+3. Submit the form for verification.
+4. Review the returned results on the dashboard.
+   - Each field should indicate whether it matches the label.
+5. Repeat with different label pairs and batch test sets to confirm consistent validation behavior.
+
+Expected behavior:
+The system analyzes the label image and returns clear match/non-match indicators for each application field without errors or crashes.
+
+### Where to test:
+
+**Web-based Testing:**
+
+This is the best approach to take when testing new functionality (through an instance either localhost or public URL) of the application. Test files can be uploaded to the site directly, and print/consolge.log statements can be used and viewed in respective terminals for troubleshooting.
+
+**Local Testing (deprecated):**
+
+The `/tests` folder is for individual unit testing of the backend code separately. This is typically used when running the Python files individually (running through Python main function). However, once front-end development was completed, the best way to test functionality is through an instance (either localhost or public URL) of the application.
 
 ## File Format
 
@@ -212,15 +253,18 @@ Midnight Ember,Smoky Bourbon Whiskey,47,%,750,mL,Midnight Ember Distillery,USA
 **Before troubleshooting any errors, make sure all the requied packages are installed, the virtual enviroment is sourced (Python 3.12), and you have the latest version of the code.**
 
 **Backend won't start:**
+
 - Ensure your virtual environment is activated
 - Verify all dependencies installed: `pip list`
 - Check that port 8000 is not in use
 
 **Frontend won't start:**
+
 - Clear node modules and reinstall: `rm -rf node_modules && npm install`
 - Check that port 5173 is not in use
 
 **404 errors when verifying:**
+
 - Ensure both backend and frontend are running
 - Verify backend is on port 8000 and frontend on port 5173
 
@@ -229,7 +273,7 @@ Midnight Ember,Smoky Bourbon Whiskey,47,%,750,mL,Midnight Ember Distillery,USA
 **Batch Processing Size:**
 From the front-end, the batch size is constant at 4 image-app pairs by default. This is enough to process multiple images while avoiding any API RateLimit errors, although RateLimit errors may still occur with 15+ requests within a minute. The backend code is able to handle RateLimit errors and will delay the processing of any more images until the RateLimit Error subsides.
 
-The developer is able to adjust the batch size here: 
+The developer is able to adjust the batch size here:
 `frontend/src/routes/+page.svelte`:
 
 ```typescript
@@ -240,12 +284,16 @@ const BATCH_SIZE = 4; // Process 4 pairs at a time
 
 The system uses OpenAI's Vision API via GPT-4o-mini by default. To change models, edit `backend/label_classifier.py`.
 
+**Other notes**
+This entire project was developed SUPER quickly in a single week from the dates 2/13/2026 to 2/20/2026. Keep in mind during webapp use.
+
 ## License
+
 License information can be found in the `LICENSE` file at the top level directory of the project. The file will state:
 
 Copyright (c) 2026 Mark Biegel
 
-All rights reserved.  
+All rights reserved.
 
 This software and its source code may not be used, copied, modified, or distributed in any form, including internal or commercial use, without the explicit written permission of the copyright holder.
 
@@ -260,5 +308,3 @@ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
-
-
