@@ -1,4 +1,5 @@
 <script lang="ts">
+	// Props passed into the modal
 	export let show = false;
 	export let title: string;
 	export let icon: any = null;
@@ -8,23 +9,27 @@
 	export let cancelText: string = 'Cancel';
 	export let modalSize: string = 'xl';
 
+	// Close modal when clicking on backdrop
 	function handleBackdropClick(e: MouseEvent | KeyboardEvent) {
 		if (e.target === e.currentTarget) {
 			onCancel();
 		}
 	}
 
+	// Close modal when pressing Escape
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
 			onCancel();
 		}
 	}
 
+	// Prevent event bubbling for inner elements
 	function stopPropagation(e: Event) {
 		e.stopPropagation();
 	}
 </script>
 
+<!-- Modal wrapper -->
 {#if show}
 	<div
 		role="dialog"
@@ -36,6 +41,7 @@
 		on:keydown={handleKeydown}
 		tabindex="-1"
 	>
+		<!-- Modal content container -->
 		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<div
@@ -44,6 +50,7 @@
 			role="document"
 		>
 			<div class="flex items-start gap-4">
+				<!-- Optional icon display -->
 				{#if icon}
 					<div class="shrink-0">
 						{#if typeof icon === 'string'}
@@ -55,11 +62,15 @@
 						{/if}
 					</div>
 				{/if}
+
+				<!-- Modal body -->
 				<div class="flex-1">
 					<h3 id="modal-title" class="mb-2 text-lg font-semibold text-gray-900">{title}</h3>
 					<div class="mb-4 text-sm text-gray-600">
 						<slot />
 					</div>
+
+					<!-- Modal action buttons -->
 					<div class="flex justify-end gap-3">
 						<button
 							type="button"

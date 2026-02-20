@@ -1,20 +1,25 @@
 <script lang="ts">
+	// Imports
 	import Modal from '$lib/components/Modal.svelte';
 	import type { FilePair, ApplicationData } from '$lib/types';
 
+	// Props
 	let { onPairsUpdate }: { onPairsUpdate: (pairs: FilePair[]) => void } = $props();
 
+	// State variables
 	let pairs = $state<Map<string, FilePair>>(new Map());
 	let isDragging = $state(false);
 	let fileInputElement: HTMLInputElement;
 
-	// Add these for the modal
+	// Modal state for rejected files
 	let showRejectedFilesModal = $state(false);
 	let rejectedFilesList = $state<string[]>([]);
 
+	// Allowed file extensions
 	const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 	const ALLOWED_APPLICATION_EXTENSION = '.csv';
 
+	// Check if file type is valid
 	function isValidFileType(filename: string, type: 'image' | 'application'): boolean {
 		const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
 
@@ -27,6 +32,7 @@
 		return false;
 	}
 
+	// Extract base name and type from file name
 	function extractBaseName(filename: string): {
 		baseName: string;
 		type: 'image' | 'application' | null;
@@ -42,6 +48,7 @@
 		return { baseName: nameWithoutExt, type: null };
 	}
 
+	// Process uploaded files and update pairs
 	async function processFiles(files: FileList | File[]) {
 		const fileArray = Array.from(files);
 		const newPairs = new Map(pairs);
@@ -91,7 +98,7 @@
 				}
 			}
 
-			// Recalculate status
+			// Recalculate pair status
 			if (pair.imageFile && pair.applicationFile && pair.applicationData) {
 				pair.status = 'complete';
 			} else if (pair.imageFile && !pair.applicationFile) {
@@ -112,6 +119,7 @@
 		}
 	}
 
+	// Parse CSV text into ApplicationData object
 	function parseCSVFile(csvText: string): ApplicationData {
 		const lines = csvText.trim().split('\n');
 		if (lines.length < 2) {
@@ -138,6 +146,7 @@
 		};
 	}
 
+	// Drag-and-drop event handlers
 	function handleDrop(e: DragEvent) {
 		e.preventDefault();
 		isDragging = false;
@@ -157,6 +166,7 @@
 		isDragging = false;
 	}
 
+	// File input change handler
 	function handleFileInput(e: Event) {
 		const input = e.target as HTMLInputElement;
 		if (input.files) {
@@ -164,6 +174,7 @@
 		}
 	}
 
+	// Remove a pair from the list
 	export function removePair(baseName: string) {
 		const newPairs = new Map(pairs);
 		newPairs.delete(baseName);
@@ -171,15 +182,18 @@
 		onPairsUpdate(Array.from(pairs.values()));
 	}
 
+	// Reset all pairs
 	export function resetPairs() {
 		pairs = new Map();
 		onPairsUpdate([]);
 	}
 
+	// Open file browser
 	function openFileBrowser() {
 		fileInputElement?.click();
 	}
 
+	// Status configuration for display
 	const statusConfig = {
 		complete: { color: 'text-green-600', icon: '✓', label: 'Ready' },
 		'missing-image': { color: 'text-red-600', icon: '✗', label: 'Missing Image' },
@@ -220,6 +234,7 @@
 		</p>
 	</div>
 
+	<!-- Hidden file input -->
 	<input
 		bind:this={fileInputElement}
 		type="file"
@@ -229,7 +244,7 @@
 		class="hidden"
 	/>
 
-	<!-- Pairs List -->
+	<!-- Uploaded Pairs List -->
 	{#if pairs.size > 0}
 		<div class="space-y-2">
 			<h3 class="mb-2 text-sm font-semibold text-gray-700">Uploaded Pairs ({pairs.size})</h3>
@@ -270,6 +285,7 @@
 	{/if}
 </div>
 
+<!-- Rejected Files Modal -->
 <Modal
 	bind:show={showRejectedFilesModal}
 	title="Invalid Files Detected"
@@ -282,6 +298,7 @@
 	onCancel={() => (showRejectedFilesModal = false)}
 	onConfirm={() => (showRejectedFilesModal = false)}
 >
+	<!-- Rejected files list -->
 	<p class="mb-3">The following files were rejected due to a mismatch:</p>
 	<ul class="mb-3 max-h-48 list-disc space-y-1 overflow-y-auto pl-5">
 		{#each rejectedFilesList as file}

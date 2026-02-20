@@ -1,7 +1,9 @@
 <script lang="ts">
+	// Imports
 	import FieldResult from './FieldResult.svelte';
 	import type { VerificationResult } from '$lib/types';
 
+	// Props
 	let {
 		result,
 		onFieldOverride,
@@ -12,6 +14,7 @@
 		onFieldConfirmReject?: (index: number) => void;
 	} = $props();
 
+	// Status configuration for banner
 	const statusConfig = {
 		approved: {
 			bg: 'bg-green-600',
@@ -36,6 +39,7 @@
 		}
 	};
 
+	// Derived config based on overallStatus
 	const config = $derived(statusConfig[result.overallStatus]);
 </script>
 
@@ -53,14 +57,14 @@
 		</div>
 	</div>
 
-	<!-- Summary -->
+	<!-- Summary Section -->
 	{#if result.summary}
 		<div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
 			<p class="text-sm text-gray-600">{result.summary}</p>
 		</div>
 	{/if}
 
-	<!-- Field Results -->
+	<!-- Field Results List -->
 	<div class="flex flex-col gap-3 p-6">
 		<h3 class="mb-1 text-sm font-semibold tracking-wider text-gray-500 uppercase">
 			Field-by-Field Results

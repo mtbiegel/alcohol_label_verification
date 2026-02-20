@@ -1,12 +1,15 @@
 <script lang="ts">
+	// Import dependencies and components
 	import ResultsPanel from './ResultsPanel.svelte';
 	import type { FilePair } from '$lib/types';
 	import { onMount } from 'svelte';
 
+	// Scroll to top on mount
 	onMount(() => {
 		window.scrollTo({ top: 0, behavior: 'auto' });
 	});
 
+	// Props passed into the component
 	let {
 		pairs,
 		currentIndex = $bindable(),
@@ -21,6 +24,7 @@
 		batchSize: number;
 	} = $props();
 
+	// Derived values for current pair and summary counts
 	const currentPair = $derived(pairs[currentIndex]);
 	const approvedCount = $derived(
 		pairs.filter((p) => p.result?.overallStatus === 'approved').length
@@ -30,6 +34,7 @@
 	);
 	const reviewCount = $derived(pairs.filter((p) => p.result?.overallStatus === 'review').length);
 
+	// Navigation functions
 	function goToPrevious() {
 		if (currentIndex > 0) currentIndex--;
 	}
@@ -38,6 +43,7 @@
 		if (currentIndex < pairs.length - 1) currentIndex++;
 	}
 
+	// Download all results as CSV
 	function downloadAllResults() {
 		const now = new Date();
 		const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, -5); // Formats time in YYYY-MM-DDTHH-MM-SS
@@ -62,6 +68,7 @@
 		URL.revokeObjectURL(url);
 	}
 
+	// Handle overriding a field
 	function handleFieldOverride(fieldIndex: number) {
 		if (currentPair.result) {
 			const field = currentPair.result.fields[fieldIndex];
@@ -88,6 +95,7 @@
 		}
 	}
 
+	// Handle confirming a field rejection
 	function handleFieldConfirmReject(fieldIndex: number) {
 		if (currentPair.result) {
 			const field = currentPair.result.fields[fieldIndex];
@@ -106,7 +114,9 @@
 	}
 </script>
 
+<!-- Main container -->
 <div class="space-y-6">
+	<!-- Processing progress bar -->
 	{#if processingProgress && processingProgress.current < processingProgress.total}
 		<div
 			class="rounded-xl border border-white/40 bg-blue-50 p-4"
@@ -145,7 +155,8 @@
 			</div>
 		</div>
 	{/if}
-	<!-- Summary Stats -->
+
+	<!-- Summary stats -->
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-5">
 		<button onclick={downloadAllResults} class="download-all-results-button-design">
 			<svg class="h-14 w-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,10 +170,13 @@
 			Download All Results as CSV
 		</button>
 
+		<!-- Total Verified count -->
 		<div class="liquid-glass-effect">
 			<p class="text-3xl font-bold text-gray-800">{pairs.length}</p>
 			<p class="text-md text-gray-700">Total Verified</p>
 		</div>
+
+		<!-- Approved count -->
 		<div
 			class="rounded-xl border border-white/40 p-4 text-center"
 			style="background: rgba(34, 197, 94, 0.1); backdrop-filter: blur(16px);"
@@ -170,6 +184,8 @@
 			<p class="text-3xl font-bold text-green-700">{approvedCount}</p>
 			<p class="text-md text-green-800">Approved</p>
 		</div>
+
+		<!-- Need Review count -->
 		<div
 			class="rounded-xl border border-white/40 p-4 text-center"
 			style="background: rgba(234, 179, 8, 0.1); backdrop-filter: blur(16px);"
@@ -177,6 +193,8 @@
 			<p class="text-3xl font-bold text-yellow-600">{reviewCount}</p>
 			<p class="text-md text-yellow-700">Need Review</p>
 		</div>
+
+		<!-- Rejected count -->
 		<div
 			class="rounded-xl border border-white/40 p-4 text-center"
 			style="background: rgba(239, 68, 68, 0.1); backdrop-filter: blur(16px);"
@@ -186,7 +204,7 @@
 		</div>
 	</div>
 
-	<!-- Navigation -->
+	<!-- Navigation controls -->
 	<div class="liquid-glass-effect flex items-center justify-between">
 		<button onclick={goToPrevious} disabled={currentIndex === 0} class="previous-button-design">
 			← Previous
@@ -207,7 +225,7 @@
 		</button>
 	</div>
 
-	<!-- Current Result -->
+	<!-- Current result display -->
 	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 		<div>
 			{#if currentPair.result}
@@ -218,6 +236,8 @@
 				/>
 			{/if}
 		</div>
+
+		<!-- Label Image preview -->
 		<div class="liquid-glass-effect">
 			<h3 class="mb-4 text-lg font-semibold text-gray-800">Label Image</h3>
 			{#if currentPair.imageFile}

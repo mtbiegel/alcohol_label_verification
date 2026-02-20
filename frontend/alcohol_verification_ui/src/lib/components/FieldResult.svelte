@@ -1,6 +1,8 @@
 <script lang="ts">
+	// Import type definitions
 	import type { FieldResult } from '$lib/types';
 
+	// Receive props for this component
 	let {
 		result,
 		onOverride,
@@ -11,6 +13,7 @@
 		onConfirmReject?: () => void;
 	} = $props();
 
+	// Define styling and icons for each status type
 	const statusConfig = {
 		pass: {
 			bg: 'bg-green-50',
@@ -35,11 +38,14 @@
 		}
 	};
 
+	// Derive current status config based on result
 	const config = $derived(statusConfig[result.status]);
 </script>
 
+<!-- Result container -->
 <div class="rounded-lg border {config.border} {config.bg} p-4">
 	<div class="flex items-start justify-between gap-4">
+		<!-- Left side: field info -->
 		<div class="flex-1">
 			<div class="mb-2 flex items-center gap-2">
 				<span class="text-lg {config.text}">{config.icon}</span>
@@ -48,6 +54,8 @@
 					<span class="overridden-tag-design">OVERRIDDEN</span>
 				{/if}
 			</div>
+
+			<!-- Extracted vs Expected values -->
 			<div class="grid grid-cols-2 gap-3 text-sm">
 				<div>
 					<p class="mb-1 text-xs text-gray-500">Extracted</p>
@@ -58,11 +66,14 @@
 					<p class="font-mono text-gray-800">{result.expected || '—'}</p>
 				</div>
 			</div>
+
+			<!-- Optional note -->
 			{#if result.note}
 				<p class="mt-2 text-xs {config.text}">{result.note}</p>
 			{/if}
 		</div>
 
+		<!-- Right side: action buttons for fail/warning -->
 		{#if (result.status === 'fail' || result.status === 'warning') && !result.overridden}
 			<div class="flex flex-col gap-2">
 				{#if onOverride}
