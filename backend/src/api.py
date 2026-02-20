@@ -17,7 +17,7 @@ FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["FRONTEND_URL"],  # your SvelteKit dev server
+    allow_origins=[FRONTEND_URL],  # your SvelteKit dev server
     allow_methods=["*"],
     allow_headers=["*"],
 )
