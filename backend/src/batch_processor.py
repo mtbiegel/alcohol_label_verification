@@ -118,7 +118,7 @@ async def process_batch(
         for result in batch_results:
             if isinstance(result, Exception):
                 print(
-                    f"[ERROR] batch_result has invalid data: {result}. Sanitizing invalid data...",
+                    f"[WARNING] batch_result has invalid data: {result}. Sanitizing invalid data...",
                     end="",
                 )
                 cleaned_results.append(
