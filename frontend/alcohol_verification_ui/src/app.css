@@ -1,8 +1,9 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
+@reference "tailwindcss";
 
 body {
-	background-color: rgb(249 250 251); /* same as bg-gray-50 */
+	background-color: rgb(249 250 251);
 }
 
 .button-blur {
@@ -26,7 +27,25 @@ body {
 	background-color: #f0f0f0 !important;
 }
 
-@reference "tailwindcss";
+.liquid-glass-effect {
+	@apply rounded-xl border border-white/40 p-6;
+	background: rgba(255, 255, 255, 0.45);
+	backdrop-filter: blur(7px);
+	-webkit-backdrop-filter: blur(16px);
+	box-shadow:
+		0 4px 24px rgba(0, 0, 0, 0.06),
+		inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.background-image-design {
+	@apply pointer-events-none fixed inset-0;
+	z-index: -1;
+	background-image: url('/background.png');
+	background-repeat: no-repeat;
+	background-position: center center;
+	background-size: 100%;
+	opacity: 0.7;
+}
 
 .header-design {
 	@apply bg-blue-900 text-white shadow-lg;
@@ -44,16 +63,6 @@ body {
 	@apply flex cursor-pointer items-center gap-2 rounded-lg bg-white px-4 py-2 font-semibold text-blue-900 shadow-sm transition-colors hover:bg-blue-200;
 }
 
-.liquid-glass-effect {
-	@apply rounded-xl border border-white/40 p-6;
-	background: rgba(255, 255, 255, 0.45);
-	backdrop-filter: blur(7px);
-	-webkit-backdrop-filter: blur(16px); /* fallback */
-	box-shadow:
-		0 4px 24px rgba(0, 0, 0, 0.06),
-		inset 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-
 .verify-label-button-design {
 	@apply flex-1 cursor-pointer rounded-xl bg-blue-800 px-6 py-4 text-lg font-semibold text-white shadow-sm transition-colors hover:bg-blue-900 disabled:cursor-not-allowed disabled:bg-gray-300;
 }
@@ -62,22 +71,13 @@ body {
 	@apply cursor-pointer rounded-xl border-2 border-gray-400 px-6 py-4 font-semibold text-gray-700 transition-colors hover:border-gray-600 disabled:border-gray-300 disabled:text-gray-400;
 }
 
-.background-image-design {
-	@apply pointer-events-none fixed inset-0;
-	z-index: -1;
-	background-image: url('/background.png');
-	background-repeat: no-repeat;
-	background-position: center center;
-	background-size: 100%;
-	opacity: 0.7;
+.download-all-results-button-design {
+	@apply flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-700 px-6 py-3 font-semibold text-white shadow-md backdrop-blur-md transition-colors hover:bg-blue-900;
 }
 
-.error-design {
-	@apply rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700;
-}
-
-.overridden-tag-design {
-	@apply rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700;
+.previous-button-design,
+.next-button-design {
+	@apply cursor-pointer rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-gray-300;
 }
 
 .override-button-design {
@@ -88,16 +88,8 @@ body {
 	@apply cursor-pointer rounded bg-red-600 px-2.5 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-red-800;
 }
 
-.dropzone {
-	@apply mb-4 cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors;
-}
-
-.dropzone-idle {
-	@apply border-gray-300 hover:border-blue-400 hover:bg-gray-50;
-}
-
-.dropzone-dragging {
-	@apply border-blue-500 bg-blue-50;
+.overridden-tag-design {
+	@apply rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700;
 }
 
 .status-valid-image {
@@ -112,14 +104,18 @@ body {
 	@apply rounded bg-red-100 px-2 py-1 text-red-700;
 }
 
-.download-all-results-button-design {
-	@apply flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-700 px-6 py-3 font-semibold text-white shadow-md backdrop-blur-md transition-colors hover:bg-blue-900;
+.dropzone {
+	@apply mb-4 cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors;
 }
 
-.previous-button-design {
-	@apply cursor-pointer rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-gray-300;
+.dropzone-idle {
+	@apply border-gray-300 hover:border-blue-400 hover:bg-gray-50;
 }
 
-.next-button-design {
-	@apply cursor-pointer rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-gray-300;
+.dropzone-dragging {
+	@apply border-blue-500 bg-blue-50;
+}
+
+.error-design {
+	@apply rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700;
 }
