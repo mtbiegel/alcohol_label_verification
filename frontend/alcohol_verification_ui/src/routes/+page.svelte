@@ -85,8 +85,6 @@ See LICENSE file for full license text. -->
 				}));
 				formData.append('applicationData', JSON.stringify(appDataArray));
 
-				console.log("HEREEEEEEEEEE - Fetching URL:", `${import.meta.env.VITE_API_URL}/verify-batch`);
-
 				const response = await fetch(`${import.meta.env.VITE_API_URL}/verify-batch`, {
 					method: 'POST',
 					body: formData
