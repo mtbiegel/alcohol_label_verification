@@ -1,3 +1,7 @@
+# MIT License
+# Copyright (c) 2026 Mark Biegel
+# LICENSE file for full license text.
+
 import asyncio
 import label_classifier
 import glob

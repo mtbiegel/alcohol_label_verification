@@ -1,3 +1,7 @@
+<!-- MIT License
+Copyright (c) 2026 Mark Biegel
+See LICENSE file for full license text. -->
+
 <script lang="ts">
 	import '../app.css';
 

@@ -1,3 +1,7 @@
+// MIT License
+// Copyright (c) 2026 Mark Biegel
+// See LICENSE file for full license text.
+
 export interface ApplicationData {
 	brand_name: string;
 	class_type: string;

@@ -1,3 +1,7 @@
+<!-- MIT License
+Copyright (c) 2026 Mark Biegel
+See LICENSE file for full license text. -->
+
 <script lang="ts">
 	// Import type definitions
 	import type { FieldResult } from '$lib/types';

@@ -1,4 +1,7 @@
-# api/api.py
+# MIT License
+# Copyright (c) 2026 Mark Biegel
+# LICENSE file for full license text.
+
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
