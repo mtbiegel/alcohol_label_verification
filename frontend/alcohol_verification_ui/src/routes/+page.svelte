@@ -87,7 +87,7 @@ See LICENSE file for full license text. -->
 
 				console.log("HEREEEEEEEEEE - Fetching URL:", `${import.meta.env.VITE_API_URL}/verify-batch`);
 
-				const response = await fetch("https://alcoholverificationappbackend-production.up.railway.app/verify-batch", {
+				const response = await fetch(`${import.meta.env.VITE_API_URL}/verify-batch`, {
 					method: 'POST',
 					body: formData
 				});
