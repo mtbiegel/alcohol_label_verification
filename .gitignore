@@ -5,3 +5,5 @@ notes_for_me.txt
 .env
 
 .*
+
+example_pairings_base_images/*
