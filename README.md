@@ -144,11 +144,11 @@ The frontend will be available at `http://localhost:5173`
 
 #### Prerequisites:
 
-For this application, you will need to have an image and
+For this application, you will need to have an image and application at the ready.
 
-Click the "Using ProofCheck™" button in the top right to learn more about using ProofCheck™.
+**The BEST way to learn how to use ProofCheck™ - Click "Using ProofCheck™ button on home page:**
 
-**After starting both the frontend and backend (in separate terminals):**
+After starting both the frontend and backend (in separate terminals):
 
 1. Open your browser and navigate to `http://localhost:5173`
 2. Click the "Using ProofCheck™" button in the top right to view and learn how to use this applicaiton. This is the best way to learn the application.
@@ -157,7 +157,7 @@ If you prefer verbosity in this readme file, the instructions are outlined here:
 
 ### How to use ProofCheck™
 
-#### Proper Application Format - Download the Template:
+#### 1. Proper Application Format - Download the Template:
 
 Download the application template from the button in the top right corner named `Download Template`. Use this template as the starting point for bottlers and producers to input data; this way, data can easily be loaded into the ProofCheck™ with the correct fields. Valid fields are as follows:
 
@@ -183,7 +183,7 @@ And the proper fields for the CSV are as follows:
 
 Once the information is populated into the CSV fields, follow the next step for file naming scheme. Click the "Example Data (ZIP)" button in the web app or navigate to `/frontend/alcohol_verification_ui/static/example_pairings.zip` (in the repo) to get example data and for testing.
 
-#### Proper File Naming Scheme
+#### 2. Proper File Naming Scheme
 
 Rename files such that the image file has `<_LABEL_NAME>_image.ext`, replacing `<LABEL_NAME>` with a constant name, adding the `_image.ext` where `.ext` is the original image extension (i.e `.jpg`, `.png`, `.webp`). Repeat this process for the application file: `<_LABEL_NAME>_application.csv`, replacing `<LABEL_NAME>` with the same constant name used on the image, adding the `_application.csv` suffix. As a result, the image and application file pair have the same constant name you defined as the prefix with corresponding suffixes.
 
@@ -197,15 +197,15 @@ Example of another pair with proper naming:
 - `smirnoff_ice_original_image.webp`
 - `smirnoff_ice_original_aplication.csv`
 
-#### Upload Image & Application Pair
+#### 3. Upload Image & Application Pair
 
 There are 2 methods to upload image and application pairs: You can drag and drop the image and application pair into the drop zone, or you can click the upload box and browse for image and applicaiton pair through the OS. A pair is needed to run a verification. Once you select a pair, it will show up in the "Uploaded Pairs" section and tell you if the pair is ready for valdiating or if it is missing an entry (i.e missing the image or the application).
 
-#### Run Validation
+#### 4. Run Validation
 
 Once you have valid pair(s), click the "Verify" button at the bottom of the webpage. The processing will start and route you to the Results page once completed. Each pair validation takes approximately 5 seconds to complete. The UI will let you know of any invalid pairs. Clicking the "Verify" button will prompt you with a warning that a pair(s) is incomplete. Incomplete pairs will not be processed.
 
-#### Results & Downloadables
+#### 5. Results & Downloadables
 
 Once pair(s) have been processed and redirected to the Results page, there will be the following attributes: Count for total, approved, needs-review, and rejected categories. Below that is the individual hueristcs of the processed pairs with more detail about the results; next to that is an image preview of the label you are observing. You are able to toggle through all the pair results if you uploaded multiple pairs.
 
@@ -244,8 +244,8 @@ The `/tests` folder is for individual unit testing of the backend code separatel
 Download the template from the application or create a CSV with these headers:
 
 ```csv
-brand_name,class_type,alcohol_content_amount,alcohol_content_format,net_contents_amount,net_contents_unit,producer_name,country_of_origin
-Midnight Ember,Smoky Bourbon Whiskey,47,%,750,mL,Midnight Ember Distillery,USA
+brand_name,class_type,alcohol_content_amount,alcohol_content_format,net_contents_amount,net_contents_unit,producer_name
+Midnight Ember,Smoky Bourbon Whiskey,47,%,750,mL,Midnight Ember Distillery
 ```
 
 ## Troubleshooting
