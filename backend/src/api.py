@@ -30,7 +30,7 @@ async def verify_batch(
     """
 
     # Log entry into batch endpoint and number of images to process
-    print(f"[ERROR] At batch verify API endpoint - processing {len(images)} images")
+    print(f"[INFO] At batch verify API endpoint - processing {len(images)} images")
 
     # Parse application data JSON from form (expects a list of objects)
     try:
@@ -83,7 +83,7 @@ async def verify_batch(
         raise HTTPException(status_code=500, detail="Batch processing failed")
 
     # Log completion and return results
-    print(f"[ERROR] Batch processing complete: {len(results)} results")
+    print(f"[INFO] Batch processing complete: {len(results)} results")
     return results
 
 

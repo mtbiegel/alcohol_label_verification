@@ -309,7 +309,62 @@ See LICENSE file for full license text. -->
 			onCancel={() => (showHelp = false)}
 			modalSize="4xl"
 		>
-			<!-- Help content omitted for brevity in comment section -->
+			<h1 class="font-bold">About</h1>
+			<p>
+				This app helps government workers determine if alcohol beverage labels meet regulations set
+				by the Alcohol and Tobacco Tax and Trade Bureau (TTB). It allows workers to quickly verify
+				labels match corresponding application information and meet requirements.
+			</p>
+			<br />
+			<h1 class="font-bold">How to use</h1>
+			<ol class="list-inside list-decimal">
+				<li>Use the proper Application - Download the Template:</li>
+				<p>
+					Download the application template from the button in the top right corner named "Download
+					Template". Use this template as the starting point for bottlers and producers to input
+					data; this way, data can easily be loaded into the ProofCheck™ with the correct fields.
+					Once the information is populated into the CSV fields, follow the next step for file
+					naming scheme.
+				</p>
+				<br />
+				<li>Proper File Naming Scheme</li>
+				<p>
+					Rename files such that the image file has LABEL_image.ext, replacing LABEL with a constant
+					name, adding the "_image.ext" where .ext is the original image extension. Repeat this
+					process for the application file, replacing LABEL with the same constant name used on the
+					image, adding the "_application.csv" suffix. As a result, the image and application file
+					pair have the same constant name you defined as the prefix with corresponding suffixes.
+					Example of a pair with proper naming: "corona_extra_image.png" &
+					"corona_extra_application.png"
+				</p>
+				<br />
+				<li>Upload Image & Application Pair</li>
+				<p>
+					There are 2 methods to upload image and application pairs: You can drag and drop the image
+					and application pair into the drop zone, or you can click the upload box and browse for
+					image and applicaiton pair through the OS. Once you select a pair, it will show up in the
+					"Uploaded Pairs" section and tell you if the pair is ready for valdiating or if it is
+					missing an entry (i.e missing the image or the application).
+				</p>
+				<br />
+				<li>Run Validation</li>
+				<p>
+					Once you have valid pair(s), click the "Verify" button at the bottom of the webpage. The
+					processing will start and route you to the Results page once completed. Each pair
+					validation takes approximately 5 seconds to complete. The UI will let you know of any
+					invalid pairs. Clicking the "Verify" button will prompt you with a warning that a pair(s)
+					is incomplete. Incomplete pairs will not be processed.
+				</p>
+				<br />
+				<li>Results & Downloadables</li>
+				Once pair(s) have been processed and redirected to the Results page, there will be the following
+				attributes: Count for total, approved, needs-review, and rejected categories. Below that is the
+				individual hueristcs of the processed pairs with more detail about the results; next to that is
+				an image preview of the label you are observing. You are able to toggle through all the pair results
+				if you uploaded multiple pairs. You are able to download the hueristics from this validation run
+				with the "Download All Results as CSV" button. If you uploaded multiple pairs, you will see a
+				progress bar at the top of this page showing how many pairs are still processing.
+			</ol>
 		</Modal>
 	</main>
 </div>

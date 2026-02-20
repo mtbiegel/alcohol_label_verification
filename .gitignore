@@ -3,4 +3,6 @@ take_home_venv_3.11/*
 
 backend/src/__pycache__/*
 
+.env
+
 .*
