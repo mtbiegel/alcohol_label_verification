@@ -175,34 +175,25 @@ See LICENSE file for full license text. -->
 		</button>
 
 		<!-- Total Verified count -->
-		<div class="liquid-glass-effect">
-			<p class="text-3xl font-bold text-gray-800">{pairs.length}</p>
+		<div class="liquid-glass-effect-results bg-slate-500/15">
+			<p class="text-3xl font-bold text-gray-600">{pairs.length}</p>
 			<p class="text-md text-gray-700">Total Verified</p>
 		</div>
 
 		<!-- Approved count -->
-		<div
-			class="rounded-xl border border-white/40 p-4 text-center"
-			style="background: rgba(34, 197, 94, 0.1); backdrop-filter: blur(16px);"
-		>
-			<p class="text-3xl font-bold text-green-700">{approvedCount}</p>
-			<p class="text-md text-green-800">Approved</p>
+		<div class="liquid-glass-effect-results bg-green-200/30">
+			<p class="text-3xl font-bold text-green-600">{approvedCount}</p>
+			<p class="text-md text-green-700">Approved</p>
 		</div>
 
 		<!-- Need Review count -->
-		<div
-			class="rounded-xl border border-white/40 p-4 text-center"
-			style="background: rgba(234, 179, 8, 0.1); backdrop-filter: blur(16px);"
-		>
+		<div class="liquid-glass-effect-results bg-yellow-200/25">
 			<p class="text-3xl font-bold text-yellow-600">{reviewCount}</p>
 			<p class="text-md text-yellow-700">Need Review</p>
 		</div>
 
 		<!-- Rejected count -->
-		<div
-			class="rounded-xl border border-white/40 p-4 text-center"
-			style="background: rgba(239, 68, 68, 0.1); backdrop-filter: blur(16px);"
-		>
+		<div class="liquid-glass-effect-results bg-red-200/25">
 			<p class="text-3xl font-bold text-red-600">{rejectedCount}</p>
 			<p class="text-md text-red-700">Rejected</p>
 		</div>

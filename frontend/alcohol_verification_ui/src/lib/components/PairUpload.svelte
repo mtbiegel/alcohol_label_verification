@@ -312,7 +312,7 @@ See LICENSE file for full license text. -->
 		{/each}
 	</ul>
 	<p class="rounded bg-gray-50 p-2 text-xs text-gray-500">
-		<strong>Naming Convention:</strong>The naming convention could be incorrect:
+		<strong>Naming Convention: </strong>The naming convention could be incorrect:
 		<span class="inline-block w-full indent-8">Images = "_image.ext"</span>
 		<span class="inline-block w-full indent-8">Applications = "_application.csv"</span>
 	</p>
