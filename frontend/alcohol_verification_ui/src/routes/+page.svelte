@@ -234,8 +234,8 @@ See LICENSE file for full license text. -->
 			<div class="space-y-6">
 				<section class="liquid-glass-effect">
 					<div class="mb-4">
-						<h2 class="text-lg font-semibold text-gray-900">Upload Labels & Applications</h2>
-						<p class="mt-1 text-sm text-gray-800">
+						<h2 class="text-lg font-semibold text-blue-900">Upload Labels & Applications</h2>
+						<p class="mt-1 text-sm text-gray-700">
 							NAMING SCHEME: Upload paired files & replace LABEL_NAME with the label's name:
 							<code class="rounded bg-gray-200 px-1">LABEL_NAME_image.ext</code>
 							and
@@ -319,7 +319,7 @@ See LICENSE file for full license text. -->
 			<br />
 			<h1 class="font-bold">How to use</h1>
 			<ol class="list-inside list-decimal">
-				<li>Use the proper Application - Download the Template:</li>
+				<li>Use the proper application - Download the template:</li>
 				<p>
 					Download the application template from the button in the top right corner named "Download
 					Template". Use this template as the starting point for bottlers and producers to input
@@ -336,7 +336,7 @@ See LICENSE file for full license text. -->
 					image, adding the "_application.csv" suffix. As a result, the image and application file
 					pair have the same constant name you defined as the prefix with corresponding suffixes.
 					Example of a pair with proper naming: "corona_extra_image.png" &
-					"corona_extra_application.png"
+					"corona_extra_application.png". <b>NOTE: Proper image file types are .jpg, .png, and .webp. Proper application file types are .csv</b>
 				</p>
 				<br />
 				<li>Upload Image & Application Pair</li>

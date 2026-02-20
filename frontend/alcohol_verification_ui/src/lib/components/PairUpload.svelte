@@ -235,6 +235,8 @@ See LICENSE file for full license text. -->
 		<p class="mt-2 text-xs text-gray-600">
 			Files must follow scheme: <strong>LABEL_NAME_image.ext</strong> and
 			<strong>LABEL_NAME_application.csv</strong>
+			<br>
+			Accepted image file types are <strong>.jpg, .png, & .webp</strong> and <strong>application types is .csv</strong>
 		</p>
 	</div>
 
